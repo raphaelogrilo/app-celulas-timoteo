@@ -1,0 +1,172 @@
+import type { Coords, Celula, PerfilCelula } from '../types/celula';
+
+/**
+ * Calcula a distância em quilômetros entre duas coordenadas usando a fórmula de Haversine
+ */
+export function calculateDistanceKm(coord1: Coords, coord2: Coords): number {
+  const R = 6371; // Raio da Terra em km
+  const dLat = ((coord2.lat - coord1.lat) * Math.PI) / 180;
+  const dLon = ((coord2.lng - coord1.lng) * Math.PI) / 180;
+  
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((coord1.lat * Math.PI) / 180) *
+      Math.cos((coord2.lat * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+  
+  return Number(distance.toFixed(1));
+}
+
+/**
+ * Busca dados de endereço pelo CEP na API do ViaCEP
+ */
+export async function fetchCepData(cepInput: string): Promise<{
+  bairro?: string;
+  logradouro?: string;
+  localidade?: string;
+  erro?: boolean;
+} | null> {
+  const cleanCep = cepInput.replace(/\D/g, '');
+  if (cleanCep.length !== 8) return null;
+
+  try {
+    const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (data.erro) return { erro: true };
+    return {
+      bairro: data.bairro,
+      logradouro: data.logradouro,
+      localidade: data.localidade
+    };
+  } catch (err) {
+    console.error('Erro ao consultar ViaCEP:', err);
+    return null;
+  }
+}
+
+/**
+ * Gera link de conversa no WhatsApp com mensagem preenchida
+ */
+export function getWhatsAppLink(celula: Celula): string {
+  const cleanPhone = celula.telefone.replace(/\D/g, '');
+  const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+  
+  const message = `Olá líder ${celula.lider}! 👋\nEncontrei a *${celula.nome}* (${celula.bairro}) pelo aplicativo de células de Timóteo e gostaria de participar do próximo encontro (${celula.dia} às ${celula.horario}). Pode me passar mais detalhes?`;
+  
+  return `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`;
+}
+
+/**
+ * Gera link para rotas no Google Maps
+ */
+export function getGoogleMapsRouteLink(celula: Celula): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${celula.coords?.lat ?? 0},${celula.coords?.lng ?? 0}&destination_place_id=Timoteo`;
+}
+
+/**
+ * Gera link para navegação no Waze
+ */
+export function getWazeRouteLink(celula: Celula): string {
+  return `https://waze.com/ul?ll=${celula.coords?.lat ?? 0},${celula.coords?.lng ?? 0}&navigate=yes`;
+}
+
+/**
+ * Gera link de ligação telefônica direta
+ */
+export function getTelLink(celula: Celula): string {
+  const cleanPhone = celula.telefone.replace(/\D/g, '');
+  return `tel:+55${cleanPhone}`;
+}
+
+/**
+ * Configurações de estilo e cores por perfil de célula
+ */
+export interface ProfileStyle {
+  bg: string;
+  border: string;
+  text: string;
+  badgeBg: string;
+  badgeText: string;
+  markerColor: string;
+  pinBg: string;
+}
+
+export function getProfileStyle(perfil: PerfilCelula | string): ProfileStyle {
+  switch (perfil) {
+    case 'Jovens':
+      return {
+        bg: 'bg-indigo-50',
+        border: 'border-indigo-200',
+        text: 'text-indigo-700',
+        badgeBg: 'bg-indigo-600',
+        badgeText: 'text-white',
+        markerColor: '#4f46e5',
+        pinBg: '#4f46e5',
+      };
+    case 'Casais':
+      return {
+        bg: 'bg-rose-50',
+        border: 'border-rose-200',
+        text: 'text-rose-700',
+        badgeBg: 'bg-rose-600',
+        badgeText: 'text-white',
+        markerColor: '#e11d48',
+        pinBg: '#e11d48',
+      };
+    case 'Família':
+      return {
+        bg: 'bg-blue-50',
+        border: 'border-blue-200',
+        text: 'text-blue-700',
+        badgeBg: 'bg-blue-600',
+        badgeText: 'text-white',
+        markerColor: '#2563eb',
+        pinBg: '#2563eb',
+      };
+    case 'Mulheres':
+      return {
+        bg: 'bg-pink-50',
+        border: 'border-pink-200',
+        text: 'text-pink-700',
+        badgeBg: 'bg-pink-600',
+        badgeText: 'text-white',
+        markerColor: '#db2777',
+        pinBg: '#db2777',
+      };
+    case 'Homens':
+      return {
+        bg: 'bg-emerald-50',
+        border: 'border-emerald-200',
+        text: 'text-emerald-700',
+        badgeBg: 'bg-emerald-600',
+        badgeText: 'text-white',
+        markerColor: '#059669',
+        pinBg: '#059669',
+      };
+    case 'Teens':
+      return {
+        bg: 'bg-amber-50',
+        border: 'border-amber-200',
+        text: 'text-amber-700',
+        badgeBg: 'bg-amber-500',
+        badgeText: 'text-white',
+        markerColor: '#d97706',
+        pinBg: '#d97706',
+      };
+    default:
+      return {
+        bg: 'bg-slate-100',
+        border: 'border-slate-300',
+        text: 'text-slate-800',
+        badgeBg: 'bg-slate-700',
+        badgeText: 'text-white',
+        markerColor: '#334155',
+        pinBg: '#334155',
+      };
+  }
+}
