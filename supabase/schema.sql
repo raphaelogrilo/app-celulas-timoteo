@@ -6,7 +6,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. TABELA DE LÍDERES (Permissões e Vínculos)
--- Apenas usuários cadastrados previamente pelo admin nesta tabela podem logar como líder
+-- Apenas usuários cadastrados previamente nesta tabela podem acessar como líder/admin
 CREATE TABLE IF NOT EXISTS public.lideres (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
@@ -71,12 +71,10 @@ ALTER TABLE public.lideres ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.celulas ENABLE ROW LEVEL SECURITY;
 
 -- Políticas para CÉLULAS:
--- Todos podem visualizar células ativas publicamente
 CREATE POLICY "Visualização pública de células ativas"
     ON public.celulas FOR SELECT
     USING (ativo = TRUE OR auth.role() = 'authenticated');
 
--- Usuários autenticados (líderes e admins) podem inserir, atualizar e gerenciar células
 CREATE POLICY "Líderes e admins podem gerenciar células"
     ON public.celulas FOR ALL
     TO authenticated
@@ -84,7 +82,6 @@ CREATE POLICY "Líderes e admins podem gerenciar células"
     WITH CHECK (TRUE);
 
 -- Políticas para LÍDERES:
--- Usuários autenticados podem ver o registro de líderes para conferir permissões
 CREATE POLICY "Leitura de líderes autenticados"
     ON public.lideres FOR SELECT
     USING (TRUE);
