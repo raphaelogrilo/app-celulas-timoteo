@@ -30,12 +30,13 @@ export const CELULAS_SEED: Celula[] = [
     telefone: '(31) 98869-5702',
     dia: 'Quinta-feira',
     horario: '20:00',
-    bairro: 'Centro Norte',
-    cep: '35180-002',
+    endereco: 'Rua Oito de Novembro, 05',
+    bairro: 'Centro',
+    cep: '35180-005',
     faixaEtaria: 'Homens',
     ativo: true,
     itinerante: false,
-    coords: { lat: -19.5780, lng: -42.6430 },
+    coords: { lat: -19.53733, lng: -42.64773 },
   },
 
   // ------------------------------------------------------------
