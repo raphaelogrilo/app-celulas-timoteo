@@ -183,10 +183,11 @@ export default function AdminPanel() {
           <div className="flex items-center gap-2">
             <Link
               to="/"
-              className="hidden md:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-white/5 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 text-xs font-bold border border-brand-500/30 transition-all active:scale-95 shadow-sm"
+              title="Ver Mapa Público"
             >
-              <Navigation className="w-3.5 h-3.5" />
-              Mapa Público
+              <Navigation className="w-3.5 h-3.5 text-brand-400" />
+              <span>Ver Mapa</span>
             </Link>
             <Link
               to="/lider/dashboard"
@@ -197,7 +198,7 @@ export default function AdminPanel() {
             </Link>
             <button
               onClick={logout}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold border border-red-500/20 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold border border-red-500/20 transition-colors"
               title="Encerrar sessão"
             >
               <LogOut className="w-3.5 h-3.5" />

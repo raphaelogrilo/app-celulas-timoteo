@@ -86,13 +86,14 @@ export default function LeaderDashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            <a
-              href="/"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
+            <Link
+              to="/"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 text-xs font-bold border border-brand-500/30 transition-all active:scale-95"
+              title="Ver Mapa Público"
             >
-              <Navigation className="w-3.5 h-3.5" />
-              Mapa Público
-            </a>
+              <Navigation className="w-3.5 h-3.5 text-brand-400" />
+              <span>Ver Mapa</span>
+            </Link>
             {liderData?.isAdmin && (
               <Link
                 to="/admin"
