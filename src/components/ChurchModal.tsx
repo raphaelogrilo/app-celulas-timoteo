@@ -133,7 +133,7 @@ export const ChurchModal: React.FC<ChurchModalProps> = ({ isOpen, onClose }) => 
                     {igrejaSede.enderecoCompleto}
                   </span>
                   <span className="block text-[11px] text-slate-500 mt-0.5">
-                    Bairro {igrejaSede.bairro} · CEP {igrejaSede.cep}
+                    Bairro {igrejaSede.bairro}, Timóteo - MG
                   </span>
                 </div>
               </div>

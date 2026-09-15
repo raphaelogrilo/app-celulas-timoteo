@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, X, MapPin, Loader2, Navigation } from 'lucide-react';
+import { Search, X, MapPin } from 'lucide-react';
 import { BAIRROS_TIMOTEO } from '../data/bairrosTimoteo';
-import { fetchCepData } from '../utils/geo';
 import type { BairroTimoteo } from '../types/celula';
 
 interface SearchBarProps {
@@ -9,8 +8,6 @@ interface SearchBarProps {
   onSearchChange: (value: string) => void;
   onSelectBairro: (bairro: BairroTimoteo) => void;
   onClearSearch: () => void;
-  isLoadingCep?: boolean;
-  setIsLoadingCep?: (loading: boolean) => void;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -20,60 +17,17 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onClearSearch,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
-  const [isSearchingCep, setIsSearchingCep] = useState(false);
-  const [cepFeedback, setCepFeedback] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Filtro de sugestões de bairros
   const suggestedBairros = searchTerm.trim().length >= 1
     ? BAIRROS_TIMOTEO.filter(b =>
-        b.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        b.cepPadrao.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, ''))
+        b.nome.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : [];
 
-  // Formatação automática e busca de CEP
-  const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
-    
-    // Se o usuário estiver digitando apenas números, aplica máscara de CEP
-    const numericOnly = value.replace(/\D/g, '');
-    if (numericOnly.length > 0 && /^\d+$/.test(value.replace('-', ''))) {
-      if (numericOnly.length <= 5) {
-        value = numericOnly;
-      } else {
-        value = `${numericOnly.slice(0, 5)}-${numericOnly.slice(5, 8)}`;
-      }
-    }
-
-    onSearchChange(value);
-    setCepFeedback(null);
-
-    // Se completou 8 dígitos de CEP, pesquisa na API ViaCEP
-    if (numericOnly.length === 8) {
-      setIsSearchingCep(true);
-      try {
-        const cepData = await fetchCepData(numericOnly);
-        if (cepData && !cepData.erro && cepData.bairro) {
-          const matchedBairro = BAIRROS_TIMOTEO.find(
-            b => b.nome.toLowerCase() === (cepData.bairro || '').toLowerCase()
-          );
-
-          if (matchedBairro) {
-            onSelectBairro(matchedBairro);
-            setCepFeedback(`Bairro ${cepData.bairro} localizado!`);
-          } else {
-            setCepFeedback(`Localizado em ${cepData.bairro}, Timóteo`);
-          }
-        } else {
-          setCepFeedback('CEP não localizado ou fora de Timóteo.');
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsSearchingCep(false);
-      }
-    }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onSearchChange(e.target.value);
   };
 
   // Fechar dropdown ao clicar fora
@@ -95,11 +49,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         }`}
       >
         <div className="pl-3.5 pr-2 text-slate-400">
-          {isSearchingCep ? (
-            <Loader2 className="w-5 h-5 animate-spin text-brand-500" />
-          ) : (
-            <Search className="w-5 h-5 text-slate-400" />
-          )}
+          <Search className="w-5 h-5 text-slate-400" />
         </div>
 
         <input
@@ -107,7 +57,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           value={searchTerm}
           onChange={handleInputChange}
           onFocus={() => setIsFocused(true)}
-          placeholder="Buscar por bairro (ex: Centro) ou CEP..."
+          placeholder="Buscar por bairro em Timóteo (ex: Centro, Ana Rita)..."
           className="w-full py-3.5 pr-10 text-sm font-medium text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none"
         />
 
@@ -116,7 +66,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             type="button"
             onClick={() => {
               onClearSearch();
-              setCepFeedback(null);
             }}
             className="absolute right-3 p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
           >
@@ -124,14 +73,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           </button>
         )}
       </div>
-
-      {/* Feedback de CEP */}
-      {cepFeedback && (
-        <div className="mt-1.5 px-3 py-1.5 rounded-lg bg-brand-50 text-brand-700 text-xs font-semibold flex items-center gap-1.5 border border-brand-200 animate-fadeIn">
-          <Navigation className="w-3.5 h-3.5 text-brand-600" />
-          {cepFeedback}
-        </div>
-      )}
 
       {/* Dropdown de Autocomplete de Bairros de Timóteo */}
       {isFocused && suggestedBairros.length > 0 && (
@@ -147,7 +88,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 onSelectBairro(bairro);
                 setIsFocused(false);
               }}
-              className="w-full px-3.5 py-2.5 text-left flex items-center justify-between hover:bg-brand-50/70 transition-colors group"
+              className="w-full px-3.5 py-2.5 text-left flex items-center justify-between hover:bg-brand-50/70 transition-colors group cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-brand-100 text-slate-500 group-hover:text-brand-600 flex items-center justify-center transition-colors">
@@ -158,7 +99,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     {bairro.nome}
                   </div>
                   <div className="text-[11px] text-slate-400">
-                    CEP: {bairro.cepPadrao}
+                    Timóteo - MG
                   </div>
                 </div>
               </div>

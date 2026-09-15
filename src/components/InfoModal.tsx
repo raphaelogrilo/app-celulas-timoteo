@@ -68,7 +68,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
               <MapPin className="w-5 h-5 text-brand-600 mt-0.5 flex-shrink-0" />
               <div>
                 <strong className="text-xs font-bold text-slate-800 block">Perto de Você</strong>
-                <span className="text-[11px] text-slate-500">Use o mapa ou a busca por CEP para achar a mais próxima da sua casa.</span>
+                <span className="text-[11px] text-slate-500">Use o mapa interativo ou os filtros para achar a mais próxima da sua casa.</span>
               </div>
             </div>
           </div>

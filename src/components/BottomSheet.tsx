@@ -192,11 +192,6 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                   <strong className="text-slate-800 block text-xs font-bold">Localização:</strong>
                   <span className="text-slate-700">
                     Bairro {celula.itinerante ? celula.encontroAtual?.bairro : celula.bairro}, Timóteo - MG
-                    { (celula.itinerante ? celula.encontroAtual?.cep : celula.cep) && (
-                      <span className="text-slate-500 block text-[11px] mt-0.5">
-                        Região do CEP: {celula.itinerante ? celula.encontroAtual?.cep : celula.cep}
-                      </span>
-                    )}
                   </span>
                 </div>
               </div>

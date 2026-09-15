@@ -5,8 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getCelulaById, getCelulaByLiderEmailOrUid, updateEncontroAtual } from '../services/celulaService';
-import { fetchCepData, geocodeAddress, formatGoogleMapsAddress } from '../utils/geo';
-import { BAIRROS_TIMOTEO } from '../data/bairrosTimoteo';
+import { geocodeAddress, formatGoogleMapsAddress } from '../utils/geo';
 import { MiniMapPreview } from '../components/MiniMapPreview';
 import type { Celula } from '../types/celula';
 import {
@@ -18,8 +17,7 @@ const DIAS = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', '
 const schema = z.object({
   dia: z.string().min(1, 'Selecione o dia'),
   horario: z.string().min(1, 'Informe o horário'),
-  cep: z.string().min(8, 'CEP inválido'),
-  endereco: z.string().optional(),
+  endereco: z.string().min(4, 'Informe o endereço exato com logradouro e número'),
   bairro: z.string().min(2, 'Informe o bairro'),
   pontoReferencia: z.string().optional(),
   observacao: z.string().optional(),
@@ -37,8 +35,6 @@ export default function ItineranteUpdate() {
   const celulaIdParam = searchParams.get('id');
 
   const [celula, setCelula] = useState<Celula | null>(null);
-  const [loadingCep, setLoadingCep] = useState(false);
-  const [cepMsg, setCepMsg] = useState<string | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geoFeedback, setGeoFeedback] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -89,8 +85,7 @@ export default function ItineranteUpdate() {
         const e = c.encontroAtual;
         setValue('dia', e.dia as string);
         setValue('horario', e.horario);
-        setValue('cep', e.cep);
-        setValue('endereco', e.endereco);
+        setValue('endereco', e.endereco || '');
         setValue('bairro', e.bairro);
         setValue('pontoReferencia', e.pontoReferencia ?? '');
         setValue('observacao', e.observacao ?? '');
@@ -107,7 +102,6 @@ export default function ItineranteUpdate() {
   const handleAddressGeocode = async () => {
     const rawEnd = watch('endereco') || '';
     const bai = watch('bairro') || '';
-    const cepVal = watch('cep') || '';
 
     if (!rawEnd.trim() && !bai.trim()) return;
 
@@ -121,7 +115,7 @@ export default function ItineranteUpdate() {
     setGeoFeedback(null);
 
     const targetAddress = formattedEnd || rawEnd;
-    const coords = await geocodeAddress(targetAddress, bai, cepVal);
+    const coords = await geocodeAddress(targetAddress, bai);
     if (coords) {
       setValue('lat', coords.lat);
       setValue('lng', coords.lng);
@@ -132,42 +126,6 @@ export default function ItineranteUpdate() {
     setIsGeocoding(false);
   };
 
-  const handleCepBlur = async (cep: string) => {
-    const digits = cep.replace(/\D/g, '');
-    if (digits.length !== 8) return;
-    setLoadingCep(true);
-    setCepMsg(null);
-    const data = await fetchCepData(digits);
-    if (data && !data.erro) {
-      if (data.logradouro && !watch('endereco')) {
-        setValue('endereco', data.logradouro);
-      }
-      if (data.bairro) {
-        setValue('bairro', data.bairro);
-      }
-
-      const coords = await geocodeAddress(data.logradouro || watch('endereco'), data.bairro || watch('bairro'), digits);
-      if (coords) {
-        setValue('lat', coords.lat);
-        setValue('lng', coords.lng);
-        setCepMsg(`✓ ${data.bairro || 'Timóteo'} encontrado`);
-        setGeoFeedback(`📍 Pin posicionado na coordenada exata: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
-      } else {
-        const found = BAIRROS_TIMOTEO.find(
-          b => b.nome.toLowerCase() === (data.bairro ?? '').toLowerCase()
-        );
-        if (found) {
-          setValue('lat', found.coords.lat);
-          setValue('lng', found.coords.lng);
-          setCepMsg(`✓ ${data.bairro} encontrado`);
-        }
-      }
-    } else {
-      setCepMsg('CEP não encontrado');
-    }
-    setLoadingCep(false);
-  };
-
   const onSubmit = async (data: FormData) => {
     if (!celula) return;
     setSubmitError(null);
@@ -175,7 +133,6 @@ export default function ItineranteUpdate() {
       await updateEncontroAtual(celula.id, {
         dia: data.dia,
         horario: data.horario,
-        cep: data.cep,
         endereco: data.endereco,
         bairro: data.bairro,
         pontoReferencia: data.pontoReferencia,
@@ -260,14 +217,14 @@ export default function ItineranteUpdate() {
                   onClick={() => {
                     if (loc.dia) setValue('dia', loc.dia);
                     if (loc.horario) setValue('horario', loc.horario);
-                    if (loc.cep) setValue('cep', loc.cep);
+                    if (loc.endereco) setValue('endereco', loc.endereco);
                     if (loc.bairro) setValue('bairro', loc.bairro);
                     if (loc.coords) {
                       setValue('lat', loc.coords.lat);
                       setValue('lng', loc.coords.lng);
                     }
                     if (loc.observacao) setValue('observacao', loc.observacao);
-                    setCepMsg(`✓ Selecionado: ${loc.identificador} (${loc.bairro})`);
+                    setGeoFeedback(`📍 Selecionado: ${loc.identificador} (${loc.bairro})`);
                   }}
                   className="p-3 rounded-xl bg-slate-900/80 hover:bg-amber-500/20 border border-white/10 hover:border-amber-500/40 text-left transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between"
                 >
@@ -300,29 +257,11 @@ export default function ItineranteUpdate() {
           </div>
         </div>
 
-        {/* Horário e CEP */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className={LABEL_CLASS}><Clock className="inline w-3.5 h-3.5 mr-1" />Horário</label>
-            <input {...register('horario')} type="time" className={FIELD_CLASS} />
-            {errors.horario && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.horario.message}</p>}
-          </div>
-
-          <div>
-            <label className={LABEL_CLASS}><MapPin className="inline w-3.5 h-3.5 mr-1" />CEP (Timóteo)</label>
-            <div className="relative">
-              <input
-                {...register('cep')}
-                className={FIELD_CLASS + ' pr-10'}
-                placeholder="35180-000"
-                maxLength={9}
-                onBlur={(e) => handleCepBlur(e.target.value)}
-              />
-              {loadingCep && <Loader2 className="absolute right-3 top-3.5 w-4 h-4 animate-spin text-amber-400" />}
-            </div>
-            {cepMsg && <p className="text-[11px] text-amber-400 mt-1">{cepMsg}</p>}
-            {errors.cep && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.cep.message}</p>}
-          </div>
+        {/* Horário */}
+        <div>
+          <label className={LABEL_CLASS}><Clock className="inline w-3.5 h-3.5 mr-1" />Horário</label>
+          <input {...register('horario')} type="time" className={FIELD_CLASS} />
+          {errors.horario && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.horario.message}</p>}
         </div>
 
         {/* Bairro e Endereço */}

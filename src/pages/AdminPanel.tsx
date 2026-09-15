@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getAllLideres, createLider, deleteLider } from '../services/authService';
 import { listenAllCelulasAdmin, toggleCelulaAtivo, deleteCelula, resetAndSeedOfficialCelulas } from '../services/celulaService';
 import { useIgrejaSede } from '../hooks/useIgrejaSede';
-import { fetchCepData, geocodeAddress, formatGoogleMapsAddress, getProfileStyle } from '../utils/geo';
+import { geocodeAddress, formatGoogleMapsAddress, getProfileStyle } from '../utils/geo';
 import { MiniMapPreview } from '../components/MiniMapPreview';
 import type { LiderUser, Celula, IgrejaSede } from '../types/celula';
 import {
@@ -41,7 +41,6 @@ export default function AdminPanel() {
   const [showSedeForm, setShowSedeForm] = useState(false);
   const [sedeData, setSedeData] = useState<IgrejaSede>(igrejaSede);
   const [isGeocodingSede, setIsGeocodingSede] = useState(false);
-  const [isLoadingSedeCep, setIsLoadingSedeCep] = useState(false);
   const [sedeFeedback, setSedeFeedback] = useState<string | null>(null);
   const [sedeSaving, setSedeSaving] = useState(false);
 
@@ -125,30 +124,6 @@ export default function AdminPanel() {
     }
   };
 
-  // Funções de Gerenciamento do Endereço da Sede da Igreja
-  const handleSedeCepBlur = async (cepVal: string) => {
-    const digits = cepVal.replace(/\D/g, '');
-    if (digits.length !== 8) return;
-    setIsLoadingSedeCep(true);
-    setSedeFeedback(null);
-    const data = await fetchCepData(digits);
-    if (data && !data.erro) {
-      const updated = {
-        ...sedeData,
-        cep: cepVal,
-        bairro: data.bairro || sedeData.bairro,
-        endereco: data.logradouro || sedeData.endereco,
-      };
-      const coords = await geocodeAddress(data.logradouro || updated.endereco, data.bairro || updated.bairro, digits);
-      if (coords) {
-        updated.coords = coords;
-        setSedeFeedback(`📍 Pin da igreja localizado: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
-      }
-      setSedeData(updated);
-    }
-    setIsLoadingSedeCep(false);
-  };
-
   const handleSedeGeocode = async () => {
     if (!sedeData.endereco.trim() && !sedeData.bairro.trim()) return;
     setIsGeocodingSede(true);
@@ -156,12 +131,12 @@ export default function AdminPanel() {
 
     const formattedEnd = formatGoogleMapsAddress(sedeData.endereco);
     const targetEnd = formattedEnd || sedeData.endereco;
-    const coords = await geocodeAddress(targetEnd, sedeData.bairro, sedeData.cep);
+    const coords = await geocodeAddress(targetEnd, sedeData.bairro);
 
     const updated = {
       ...sedeData,
       endereco: targetEnd,
-      enderecoCompleto: `${targetEnd} - ${sedeData.bairro}, Timóteo - MG (CEP ${sedeData.cep})`,
+      enderecoCompleto: `${targetEnd} - ${sedeData.bairro}, Timóteo - MG`,
       coords: coords || sedeData.coords,
     };
 
@@ -179,7 +154,7 @@ export default function AdminPanel() {
     setSedeSaving(true);
     try {
       const formattedEnd = formatGoogleMapsAddress(sedeData.endereco);
-      const full = `${formattedEnd || sedeData.endereco} - ${sedeData.bairro}, Timóteo - MG (CEP ${sedeData.cep})`;
+      const full = `${formattedEnd || sedeData.endereco} - ${sedeData.bairro}, Timóteo - MG`;
       const toSave: IgrejaSede = {
         ...sedeData,
         endereco: formattedEnd || sedeData.endereco,
@@ -408,7 +383,7 @@ export default function AdminPanel() {
                         <div>
                           <div className="text-white font-bold">{sedeData.endereco || 'Rua 95, nº 6F'}</div>
                           <div className="text-[11px] text-slate-400">
-                            Bairro {sedeData.bairro} · CEP {sedeData.cep}
+                            Bairro {sedeData.bairro}, Timóteo - MG
                           </div>
                         </div>
                       </div>
@@ -429,36 +404,17 @@ export default function AdminPanel() {
                         Cadastrar Endereço Exato da Igreja
                       </div>
 
-                      <div>
-                        <label className={LABEL_CLASS}>Nome da Igreja / Sede</label>
-                        <input
-                          type="text"
-                          value={sedeData.nome}
-                          onChange={(e) => setSedeData({ ...sedeData, nome: e.target.value })}
-                          className={FIELD_CLASS}
-                          placeholder="Ex: Igreja Atos · Sede"
-                          required
-                        />
-                      </div>
-
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className={LABEL_CLASS}>CEP (Timóteo)</label>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              value={sedeData.cep}
-                              onChange={(e) => setSedeData({ ...sedeData, cep: e.target.value })}
-                              onBlur={(e) => handleSedeCepBlur(e.target.value)}
-                              className={FIELD_CLASS + ' pr-10'}
-                              placeholder="35180-368"
-                              maxLength={9}
-                              required
-                            />
-                            {isLoadingSedeCep && (
-                              <Loader2 className="absolute right-3 top-3.5 w-4 h-4 animate-spin text-amber-400" />
-                            )}
-                          </div>
+                          <label className={LABEL_CLASS}>Nome da Igreja / Sede</label>
+                          <input
+                            type="text"
+                            value={sedeData.nome}
+                            onChange={(e) => setSedeData({ ...sedeData, nome: e.target.value })}
+                            className={FIELD_CLASS}
+                            placeholder="Ex: Igreja Atos · Sede"
+                            required
+                          />
                         </div>
 
                         <div>

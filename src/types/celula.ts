@@ -28,7 +28,7 @@ export interface LocalItinerante {
   identificador: string; // Ex: "Casa do Marcos", "Família Silva", "Espaço 1"
   endereco?: string; // Endereço exato: Rua e Número
   bairro: string;
-  cep: string;
+  cep?: string;
   coords: Coords;
   dia?: string;
   horario?: string;
@@ -38,7 +38,7 @@ export interface LocalItinerante {
 export interface EncontroAtual {
   dia: DiaSemana | string;
   horario: string;
-  cep: string;
+  cep?: string;
   endereco?: string;
   bairro: string;
   pontoReferencia?: string;
@@ -88,7 +88,7 @@ export interface Celula {
 
 export interface BairroTimoteo {
   nome: string;
-  cepPadrao: string;
+  cepPadrao?: string;
   coords: Coords;
 }
 
@@ -115,7 +115,7 @@ export interface IgrejaSede {
   endereco: string;
   enderecoCompleto: string;
   bairro: string;
-  cep: string;
+  cep?: string;
   cidade: string;
   coords: Coords;
   cultos: string;
