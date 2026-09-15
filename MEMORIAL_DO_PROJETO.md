@@ -1,6 +1,6 @@
 # 📖 MEMORIAL DO PROJETO · APP DE CÉLULAS TIMÓTEO
 **Igreja Atos — Timóteo / MG**  
-*Registro Histórico de Desenvolvimento e Arquitetura do Sistema*
+*Registro Histórico de Desenvolvimento, Arquitetura e Memória do Sistema*
 
 ---
 
@@ -9,9 +9,9 @@
 O **App de Células Timóteo** é uma Progressive Web Application (PWA) e plataforma web interativa moderna, mobile-first e responsiva para desktop, desenvolvida sob medida para a **Igreja Atos** na cidade de Timóteo - MG.
 
 ### Objetivos Principais:
-1. **Para o Visitante / Membro:** Permitir encontrar de forma visual, rápida e intuitiva a célula mais próxima de sua casa através de um mapa interativo com geolocalização, filtros por perfil (Jovens, Casais, Família, Homens, Mulheres, Teens, Misto), cálculo de distância em km e contato direto com o líder via WhatsApp.
-2. **Para o Líder de Célula:** Painel de controle restrito e seguro (login Google) onde gerencia suas próprias células, ativa/pausa grupos no mapa e cadastra a rota de múltiplos endereços para células itinerantes, atualizando a localização da semana em 1 clique.
-3. **Para a Liderança / Administrador:** Painel geral com visão 360° de todas as células da igreja, autorização de novos líderes e monitoramento em tempo real.
+1. **Para o Visitante / Membro:** Permitir encontrar de forma visual, rápida e intuitiva a célula mais próxima de sua casa através de um mapa interativo com geolocalização, filtros pelos 5 ministérios oficiais (Homens, Mulheres, Casais, Jovens e Adolescentes), cálculo de distância em km e contato direto com o líder via WhatsApp.
+2. **Para o Líder de Célula:** Painel de controle restrito e seguro (login Google) onde gerencia suas próprias células, edita dados cadastrais com botão de edição de endereço, ativa/pausa grupos no mapa e cadastra a rota de múltiplos endereços para células itinerantes, além de gerenciar membros e realizar chamada com pontualidade.
+3. **Para a Liderança / Administrador:** Painel geral com visão 360° de todas as células da igreja, autorização de novos líderes, configuração da Sede Central e monitoramento em tempo real.
 
 ---
 
@@ -19,11 +19,13 @@ O **App de Células Timóteo** é uma Progressive Web Application (PWA) e plataf
 
 * **Frontend:** React 19 + TypeScript + Vite 8
 * **Estilização & Design:** TailwindCSS v4 + CSS Tokens customizados (Dark Mode imersivo, Glassmorphism, Mobile-first Viewport Locked `100dvh`)
-* **Mapas & GIS:** React-Leaflet + Leaflet 1.9 + **OpenStreetMap (Padrão Vetorial Limpo)**
+* **Mapas & GIS:** React-Leaflet + Leaflet 1.9 + **OpenStreetMap (Tile Layer gratuito sem limite de chaves)**
+* **Identidade Visual dos Marcadores:** Pins Vetoriais SVG Oficiais da Igreja Atos (`/pins/*.svg`) sem poluição de texto
+* **Backend & Banco de Dados:** **Supabase** (PostgreSQL na nuvem com índices de performance)
   * Autenticação via **Google OAuth 2.0**
   * **Supabase Realtime (WebSockets)** para sincronização instantânea de células e status
   * **Row Level Security (RLS)** para proteção de dados e permissões
-* **Geocodificação e CEP:** Integração com base de bairros de Timóteo e busca automática de CEP (ViaCEP API)
+* **Geocodificação e Endereçamento:** Sistema de normalização e busca com suporte a Nominatim/OpenStreetMap + Base oficial de 26+ bairros de Timóteo - MG
 * **Controle de Versão & CI/CD:** GitHub (`raphaelogrilo/app-celulas-timoteo`) com Deploy Contínuo automático na **Vercel**
 
 ---
@@ -36,173 +38,127 @@ O **App de Células Timóteo** é uma Progressive Web Application (PWA) e plataf
 * Integração do catálogo de **26+ bairros oficiais de Timóteo - MG** com suas coordenadas geográficas precisas.
 
 ### Fase 2: Marcador Fixo da Sede da Igreja Atos
-* Inclusão do **Pin Dourado / Amarelo da Sede da Igreja Atos**:
-  * *Endereço:* Rua 95, nº 6F — Bairro João XXIII, Timóteo / MG (CEP: 35180-368).
-  * Ao clicar no marcador amarelo ou no botão de sede, abre modal exclusivo com foto, horários dos cultos e botão de rota no Google Maps / Waze.
+* Inclusão do **Marcador Dourado da Sede da Igreja Atos**:
+  * *Endereço Oficial:* Rua 95 – Bairro João XXIII, Timóteo / MG (Coordenadas: `-19.55409, -42.64819`).
+  * Modal exclusivo com foto, horários dos cultos e botão de rota no Google Maps / Waze.
 
-### Fase 3: Identidade Visual e Categorização de Perfis
-* Criação do sistema de paleta de cores por ministério/perfil:
-  * **Jovens (flamma):** Laranja vibrante
-  * **Casais (hope):** Rosa / Carmim
-  * **Família:** Azul ciano
-  * **Homens (Homens de Atos):** Azul escuro
-  * **Mulheres (Mulheres de Atitude):** Violeta / Roxo
-  * **Teens (flick):** Verde esmeralda
-  * **Misto:** Amarelo âmbar
-* Cards dinâmicos com distância calculada em tempo real via GPS do usuário (fórmula de Haversine).
+### Fase 3: Identidade Visual Oficial e Marcadores Vetoriais SVG
+* Importação e renderização dos **5 vetores oficiais de Pins** da pasta `pins/` (sem rótulos de texto sobrepostos no mapa):
+  * 🟤 **Homens de Atos (Homens):** `/pins/homens.svg` (Marrom `#3E1F11`)
+  * 🟣 **Mulheres de Atitude (Mulheres):** `/pins/mulheres.svg` (Bordeaux/Magenta `#B14468`)
+  * 🟡 **Ministério Hope (Casais):** `/pins/hope.svg` (Dourado `#C69248`)
+  * 🟠 **Ministério Flamma (Jovens):** `/pins/flamma.svg` (Laranja `#CB3F1C`)
+  * 🔴 **Ministério Flick (Adolescentes):** `/pins/flick.svg` (Vermelho Rubro `#8C111D`)
+* Efeito suave de destaque (*glow / drop-shadow*) e animação ao tocar/selecionar qualquer pin no mapa.
 
-### Fase 4: Células Fixas vs. Células Itinerantes
-* Implementação de suporte duplo a modelos de reunião:
-  1. **Célula Fixa:** Reúne-se sempre no mesmo bairro/CEP.
-  2. **Célula Itinerante:** Alterna os encontros semanalmente entre as casas dos membros.
-* Marcadores itinerantes com badge visual `🚶 Itinerante` e suporte a atualização semanal com data e observação.
+### Fase 4: Padronização dos Filtros de Público
+* Unificação do seletor de públicos na tela principal para exibir **exclusivamente**:
+  1. `Todos` (panorâmico)
+  2. `Homens` (Homens de Atos)
+  3. `Mulheres` (Mulheres de Atitude)
+  4. `Casais` (Ministério Hope)
+  5. `Jovens` (Ministério Flamma)
+  6. `Adolescentes` (Ministério Flick)
+* Remoção de filtros legados (*Teens*, *Família*, *Misto*) alinhando 100% o app com a visão dos ministérios da igreja.
 
-### Fase 5: Autenticação Segura com Google e Controle de Acesso
+### Fase 5: Geolocalização Exata de Todas as 13 Células Oficiais
+* Geocodificação completa e posicionamento de 100% das células da igreja com coordenadas precisas:
+  1. **Forja 1 · Homens de Atos:** Rua 31 de Março, 120, Centro Sul (`-19.53809, -42.64872`)
+  2. **Forja 2 · Homens de Atos:** Rua Oito de Novembro, 05, Centro (`-19.53733, -42.64773`)
+  3. **Celeiro 1 · Mulheres de Atitude:** Rua Costa Rica, 145, Ana Rita (`-19.58913, -42.64639`)
+  4. **Celeiro 2 · Mulheres de Atitude:** Praça 29 de Abril, 80 (Próx. Prefeitura), Centro (`-19.58229, -42.64630`)
+  5. **Celeiro 3 · Mulheres de Atitude:** Rua São Paulo, 180, São José (`-19.54829, -42.65943`)
+  6. **Celeiro 4 · Mulheres de Atitude:** Avenida Almir de Souza Ameno, 420, Funcionários (`-19.54586, -42.64544`)
+  7. **Celeiro 5 · Mulheres de Atitude:** Rua Centauro, 95 (Quadra do Alvorada), Alvorada (`-19.54246, -42.62312`)
+  8. **Célula Mista 1 · Hope:** Rua 135, 150, Eldorado (`-19.54489, -42.62648`)
+  9. **Célula Mista 2 · Hope:** Rua Belo Horizonte, 210, Quitandinha (Cel. Fabriciano) (`-19.51909, -42.61380`)
+  10. **Tocha (25+) · Flamma:** Rua 19 de Novembro, 160, Apto 201, Centro Norte (`-19.53880, -42.64990`)
+  11. **Fuego · Flamma:** Avenida Jovino Augusto da Silva, 509, Bromélias (`-19.54438, -42.65270`)
+  12. **Brasa · Flick:** Rua Cruzeiro do Sul, 310 (Próx. Depósito Alvorada), Alvorada (`-19.55534, -42.66636`)
+  13. **Fire · Flick:** Rua Honduras, 180 (Próx. Posto de Saúde), Ana Rita (`-19.58925, -42.64944`)
+
+### Fase 6: Campo de Endereço Inteligente & Botão "Editar"
+* No formulário de edição/criação de células (`/lider/editar` e `/lider/cadastro`):
+  * Se a célula já possui endereço cadastrado pelo líder, o texto é preenchido diretamente no campo.
+  * Se a célula não possui endereço, permanece limpo com placeholder de exemplo.
+  * Botão de ação **"Editar"** com ícone de lápis e foco automático no input para alterações rápidas.
+
+### Fase 7: Autenticação Segura com Google e Controle de Acesso
 * Implementação de autenticação via **Google OAuth (Supabase)**.
-* Sistema de autorização em lista branca (`whitelist` na tabela `lideres`), garantindo que apenas líderes previamente cadastrados pela liderança possam acessar áreas restritas.
+* Sistema de autorização em lista branca (`whitelist` na tabela `lideres`), garantindo que apenas líderes autorizados acessem áreas restritas.
 * Detecção automática de perfil Admin vs. Líder Comum.
 
-### Fase 6: Painel Administrativo Geral (`/admin`)
-* Visão 360° de todas as células ativas e inativas da igreja.
-* Gestão completa de líderes autorizados (adicionar novo líder Google, revogar acessos, promover a Admin).
-* Estatísticas em tempo real com filtros por status e busca inteligente.
-
-### Fase 7: Painel do Líder Comum Multi-Células (`/lider/dashboard`)
-* Reformulação do painel do líder para suportar **múltiplas células gerenciadas pelo mesmo líder**.
-* Escopo estrito de permissão: o líder comum visualiza e edita exclusivamente as células vinculadas a ele.
-* Botão de ligar/desligar célula (soft-delete / ativação imediata no mapa).
-* Ações rápidas: Editar Informações, Atualizar Semana e Cadastrar Nova Célula.
-
-### Fase 8: Painel de Cadastro de Múltiplos Endereços na Rota Itinerante
-* Ao marcar "Célula Itinerante", o sistema habilita o **Painel de Endereços da Rota**:
-  * Cadastro de várias casas/locais (ex: *"Casa do Marcos"*, *"Família Silva"*, *"Espaço Jovem"*).
-  * Seleção com 1 clique do local ativo para a semana corrente.
-  * Tela de atualização rápida semanal com cartões de preenchimento automático.
-
-### Fase 9: Transição para Mapa de Satélite Esri ArcGIS World Imagery
-* Substituição do mapa vetorial padrão pelo **Esri ArcGIS World Imagery**:
-  * Imagens de satélite reais e de altíssima definição da malha urbana de Timóteo.
-  * Camada de sobreposição com os nomes das ruas, avenidas e bairros (*Reference Overlay*).
-  * Correção de zoom profundo via `maxNativeZoom={18}` e `maxZoom={20}`, eliminando qualquer bloco cinza de erro.
-
-### Fase 10: Privacidade e Otimizações Finais
-* **Proteção de Privacidade Residencial:** Remoção dos campos de endereço completo (rua e número exato) nos formulários públicos, operando por Bairro + CEP e direcionando o visitante ao WhatsApp do líder para obter a localização detalhada.
-* Correção de tipagem UUID no Supabase para busca de líderes por e-mail.
-* Ajustes de scroll natural e usabilidade para Desktop (PC) e Mobile.
-
-### Fase 11: Gestão de Membros e Sistema de Chamada com Pontualidade
+### Fase 8: Gestão de Membros e Sistema de Chamada com Pontualidade
 * **Módulo de Cadastro de Membros (`/lider/membros`):**
   * Cadastro de Nome, Data de Aniversário, Endereço e WhatsApp.
   * Destaque automático para aniversariantes do mês atual.
   * Botão de conversa direta no WhatsApp com mensagem de boas-vindas/parabéns pré-formatada.
-  * Controle de status (Ativo/Inativo) e exclusão.
 * **Módulo de Chamada e Frequência do Encontro (`/lider/chamada`):**
-  * Carregamento automático dos membros cadastrados na célula.
   * Registro de presença e ausência com 1 toque.
   * **Nível de Pontualidade:** escala graduada em passos de 5 em 5 minutos (`0 min (Pontual)`, `+5m`, `+10m`, `+15m`, ... até `+60m ou mais`).
-  * **Sessão de Visitantes:** registro dedicado de visitantes com Nome, WhatsApp, indicação de qual membro o convidou e horário de chegada/pontualidade.
-  * Contadores em tempo real (Presentes, Faltas, Visitantes, Total Geral).
-  * Histórico de reuniões anteriores com detalhamento individual e relatórios.
+  * **Sessão de Visitantes:** registro dedicado de visitantes com indicação de quem convidou e horário de chegada.
+  * Contadores em tempo real e histórico de relatórios.
 
 ---
 
-## 📁 4. Estrutura de Pastas e Arquivos Principais
+## 📁 4. Estrutura de Pastas do Projeto
 
 ```
 app-celulas-timoteo/
-├── public/                     # Favicons e manifest PWA
+├── public/                     # Favicons, manifesto e pins vetoriais
+│   └── pins/                   # SVGs oficiais (homens, mulheres, hope, flamma, flick)
 ├── src/
 │   ├── components/             # Componentes reutilizáveis
-│   │   ├── CelulaCard.tsx      # Card de exibição da célula no drawer
-│   │   ├── FilterBar.tsx       # Filtros horizontais por perfil e dia
-│   │   ├── MapContainer.tsx    # Leaflet + Esri World Imagery + Marcadores
-│   │   ├── ModalIgreja.tsx     # Modal com detalhes da Sede Igreja Atos
-│   │   └── PrivateRoute.tsx    # Guardião de rotas autenticadas
+│   │   ├── AtosLogo.tsx        # Logotipo geométrico oficial da Igreja Atos
+│   │   ├── BottomSheet.tsx     # Gaveta deslizante com detalhes da célula e WhatsApp
+│   │   ├── ChurchModal.tsx     # Modal da Sede da Igreja Atos (cultos e rotas)
+│   │   ├── FilterChips.tsx     # Chips dos 5 ministérios oficiais + dias da semana
+│   │   ├── Header.tsx          # Cabeçalho com contadores e acesso à liderança
+│   │   ├── InfoModal.tsx       # Modal explicativo "O que é uma Célula?"
+│   │   ├── ListView.tsx        # Visualização em lista ordenada por proximidade
+│   │   ├── MapContainer.tsx    # Leaflet + OpenStreetMap + Pins Vetoriais Oficiais
+│   │   ├── MiniMapPreview.tsx  # Mini-mapa interativo para conferência de endereço exato
+│   │   └── PrivateRoute.tsx    # Guardião de rotas autenticadas (Google OAuth)
 │   ├── contexts/
 │   │   └── AuthContext.tsx     # Estado global de autenticação e permissões
 │   ├── data/
-│   │   ├── bairrosTimoteo.ts   # Catálogo geográfico dos bairros de Timóteo
-│   │   └── celulas.ts          # Dados iniciais / fallback
+│   │   ├── bairrosTimoteo.ts   # Catálogo dos 26+ bairros de Timóteo e Sede Oficial
+│   │   └── celulas.ts          # Seed com as 13 células oficiais geocodificadas
 │   ├── lib/
 │   │   └── supabase.ts         # Cliente Supabase inicializado
 │   ├── pages/
 │   │   ├── AdminPanel.tsx      # Painel Geral do Administrador
-│   │   ├── CelulaForm.tsx      # Formulário de Criação/Edição (Fixa e Itinerante)
-│   │   ├── ChamadaEncontro.tsx # Chamada com pontualidade de 5 em 5 min e visitantes
-│   │   ├── ItineranteUpdate.tsx# Atualização rápida semanal de endereço
+│   │   ├── CelulaForm.tsx      # Formulário de Cadastro/Edição com botão Editar
+│   │   ├── ChamadaEncontro.tsx # Chamada com pontualidade e visitantes
+│   │   ├── ItineranteUpdate.tsx# Atualização semanal de rota itinerante
 │   │   ├── LeaderDashboard.tsx # Painel do Líder Comum (Multi-células)
 │   │   ├── LeaderLogin.tsx     # Tela de login Google com orientações
 │   │   ├── MembrosGestao.tsx   # Gestão e cadastro de membros da célula
 │   │   └── PublicMap.tsx       # Tela principal do mapa público
 │   ├── services/
 │   │   ├── authService.ts      # Funções de login, líderes e permissões
-│   │   ├── celulaService.ts    # CRUD e Realtime das células no Supabase
+│   │   ├── celulaService.ts    # CRUD, Realtime e Reconciliação com base oficial
+│   │   ├── churchService.ts    # Gestão da Sede da Igreja
 │   │   └── membroService.ts    # Gestão de membros e histórico de chamadas
 │   ├── types/
-│   │   ├── celula.ts           # Definições TypeScript (Celula, EncontroAtual, LocalItinerante)
-│   │   └── membro.ts           # Definições TypeScript (MembroCelula, ChamadaCelula, Presenca)
+│   │   ├── celula.ts           # Definições TypeScript (Celula, PerfilCelula, Coords)
+│   │   └── membro.ts           # Definições TypeScript (MembroCelula, ChamadaCelula)
 │   ├── utils/
-│   │   └── geo.ts              # Funções de cálculo de distância e busca de CEP
+│   │   └── geo.ts              # Distância Haversine, estilos de ministérios e geocoding
 │   ├── index.css               # Design System TailwindCSS v4
 │   └── main.tsx                # Roteador principal do React Router
 ├── supabase/
 │   ├── schema.sql              # Script SQL base de tabelas, índices e RLS
 │   └── schema_membros_chamadas.sql # Script SQL para membros e chamadas
-├── .env                        # Chaves de API do Supabase
-├── package.json                # Dependências e scripts
-└── MEMORIAL_DO_PROJETO.md      # Este arquivo memorial
+├── AGENTS.md                   # Regras de desenvolvimento do projeto
+├── MANUAL_DO_APP.md            # Manual do usuário e líderes
+├── MEMORIAL_DO_PROJETO.md      # Este memorial atualizado
+└── package.json                # Dependências do projeto
 ```
 
 ---
 
-## 🔐 5. Schema do Banco de Dados (Supabase)
-
-### Tabela `public.lideres`
-* `id` (UUID, PK)
-* `user_id` (UUID, FK auth.users)
-* `email` (TEXT, UNIQUE) — E-mail Google autorizado
-* `nome` (TEXT)
-* `is_admin` (BOOLEAN) — Define se é Administrador geral ou Líder comum
-* `celula_id` (UUID, FK celulas)
-* `criado_em`, `atualizado_em` (TIMESTAMPTZ)
-
-### Tabela `public.celulas`
-* `id` (UUID, PK)
-* `nome` (TEXT) — Ex: "Forja 1 - Homens de Atos"
-* `perfil` (TEXT) — 'Jovens', 'Casais', 'Família', 'Homens', 'Mulheres', 'Teens', 'Misto'
-* `lider` (TEXT)
-* `telefone` (TEXT) — WhatsApp com máscara
-* `foto_lider`, `descricao`, `faixa_etaria` (TEXT)
-* `ativo` (BOOLEAN) — Visível no mapa público
-* `itinerante` (BOOLEAN)
-* `dia`, `horario`, `cep`, `endereco`, `bairro` (TEXT)
-* `lat`, `lng` (DOUBLE PRECISION)
-* `encontro_atual` (JSONB) — Objeto com rota, locais pré-cadastrados e endereço da semana
-* `lider_email` (TEXT), `lider_user_id` (UUID)
-
-### Tabela `public.membros_celula`
-* `id` (UUID, PK)
-* `celula_id` (UUID, FK public.celulas)
-* `nome` (TEXT)
-* `data_aniversario` (TEXT)
-* `endereco` (TEXT)
-* `whatsapp` (TEXT)
-* `ativo` (BOOLEAN)
-* `criado_em`, `atualizado_em` (TIMESTAMPTZ)
-
-### Tabela `public.chamadas_celula`
-* `id` (UUID, PK)
-* `celula_id` (UUID, FK public.celulas)
-* `data_encontro` (DATE)
-* `tema` (TEXT), `observacoes` (TEXT)
-* `presencas` (JSONB) — Array de presenças com pontualidade em passos de 5 em 5 minutos
-* `visitantes` (JSONB) — Array de visitantes com WhatsApp, quem convidou e pontualidade
-* `total_presentes`, `total_faltas`, `total_visitantes` (INTEGER)
-* `criado_em`, `atualizado_em` (TIMESTAMPTZ)
-
----
-
-## 🎯 6. Status Atual de Produção
+## 🎯 5. Status Atual de Produção
 
 * **Repositório Git:** `https://github.com/raphaelogrilo/app-celulas-timoteo.git` (Branch: `main`)
 * **Build:** 100% aprovado, 0 erros TypeScript.
@@ -211,5 +167,5 @@ app-celulas-timoteo/
 
 ---
 
-*Memorial registrado em 14 de Setembro de 2026.*  
-*Desenvolvido com excelência técnica para abençoar a expansão das células da Igreja Atos em Timóteo.*
+*Memorial atualizado em 15 de Setembro de 2026.*  
+*Desenvolvido com excelência técnica para a expansão do Reino e das células da Igreja Atos em Timóteo - MG.*
