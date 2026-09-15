@@ -43,38 +43,38 @@ const MapController: React.FC<{
   return null;
 };
 
-// Gerador de ícone customizado SVG para a Sede da Igreja Atos (Marcador Amarelo / Ouro)
+// Gerador de ícone customizado SVG para a Sede da Igreja Atos (Marcador Amarelo / Ouro Compacto)
 const createIgrejaSedePinIcon = () => {
   const html = `
     <div class="pin-container" style="cursor: pointer; z-index: 1000; position: relative;">
       <div style="
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         background: linear-gradient(135deg, #FBBF24, #F59E0B);
         color: #0f172a;
-        padding: 5px 10px;
+        padding: 3.5px 9px;
         border-radius: 9999px;
         font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: 11px;
+        font-size: 10.5px;
         font-weight: 800;
-        box-shadow: 0 4px 16px rgba(245, 158, 11, 0.6), 0 2px 4px rgba(0,0,0,0.3);
+        box-shadow: 0 3px 12px rgba(245, 158, 11, 0.5), 0 2px 4px rgba(0,0,0,0.25);
         border: 2px solid #ffffff;
         white-space: nowrap;
         transform: scale(1.05);
       ">
-        <svg style="width: 14px; height: 14px;" viewBox="0 0 100 100" fill="none">
-          <circle cx="50" cy="50" r="42" stroke="#0f172a" stroke-width="12"/>
+        <svg style="width: 12px; height: 12px;" viewBox="0 0 100 100" fill="none">
+          <circle cx="50" cy="50" r="42" stroke="#0f172a" stroke-width="14"/>
           <path fill-rule="evenodd" clip-rule="evenodd" d="M50 22L72 58L50 82L28 58L50 22ZM50 44L61 62H39L50 44Z" fill="#0f172a"/>
         </svg>
-        <span style="letter-spacing: -0.01em;">Igreja Atos · Sede</span>
+        <span style="letter-spacing: -0.01em;">Igreja Atos</span>
       </div>
       <div style="
         width: 0;
         height: 0;
-        border-left: 6px solid transparent;
-        border-right: 6px solid transparent;
-        border-top: 7px solid #F59E0B;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 6px solid #F59E0B;
         margin-top: -1px;
         margin-left: auto;
         margin-right: auto;
@@ -85,45 +85,50 @@ const createIgrejaSedePinIcon = () => {
   return L.divIcon({
     className: 'custom-church-pin',
     html: html,
-    iconSize: [140, 42],
-    iconAnchor: [70, 42],
+    iconSize: [95, 36],
+    iconAnchor: [47, 36],
   });
 };
 
-// Gerador de ícone customizado SVG para pins de células
+// Gerador de ícone customizado SVG para pins de células (COMPACTO: SOMENTE O NOME DA CÉLULA)
 const createCustomPinIcon = (celula: Celula, isSelected: boolean) => {
   const style = getProfileStyle(celula.perfil);
 
+  // Extrai somente o nome curto (ex: "Tocha", "Celeiro 1", "Fire", "Mista 1")
+  const shortName = celula.nome
+    .split('·')[0]
+    .split('-')[0]
+    .replace(/^célula\s+/i, '')
+    .trim();
+
   const html = `
-    <div class="pin-container ${isSelected ? 'selected' : ''}" style="cursor: pointer;">
+    <div class="pin-container ${isSelected ? 'selected' : ''}" style="cursor: pointer; position: relative;">
       <div style="
         display: flex;
         align-items: center;
         gap: 4px;
         background-color: ${style.pinBg};
         color: white;
-        padding: 4px 8px;
+        padding: 3px 8px;
         border-radius: 9999px;
         font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: 11px;
-        font-weight: 700;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.35);
-        border: 2px solid #ffffff;
-        transform: ${isSelected ? 'scale(1.15)' : 'scale(1)'};
+        font-size: 10.5px;
+        font-weight: 750;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        border: 1.5px solid #ffffff;
+        transform: ${isSelected ? 'scale(1.18)' : 'scale(1)'};
         transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         white-space: nowrap;
       ">
-        <svg style="width: 12px; height: 12px; fill: white;" viewBox="0 0 24 24">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-        </svg>
-        <span>${celula.nome}</span>
+        <span style="width: 5px; height: 5px; border-radius: 50%; background: white; display: inline-block;"></span>
+        <span>${shortName}</span>
       </div>
       <div style="
         width: 0;
         height: 0;
-        border-left: 6px solid transparent;
-        border-right: 6px solid transparent;
-        border-top: 7px solid ${style.pinBg};
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 6px solid ${style.pinBg};
         margin-top: -1px;
         margin-left: auto;
         margin-right: auto;
@@ -135,8 +140,8 @@ const createCustomPinIcon = (celula: Celula, isSelected: boolean) => {
   return L.divIcon({
     className: 'custom-cell-pin',
     html: html,
-    iconSize: [120, 42],
-    iconAnchor: [60, 42],
+    iconSize: [80, 36],
+    iconAnchor: [40, 36],
   });
 };
 
