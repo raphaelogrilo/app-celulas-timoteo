@@ -189,21 +189,27 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               </a>
             </div>
 
-            {/* Endereço Completo & Ponto de Referência */}
-            <div className="space-y-1.5 text-xs text-slate-600 bg-white p-3 rounded-2xl border border-slate-100">
-              <div className="flex items-start gap-2">
+            {/* Informações de Localização e Privacidade */}
+            <div className="space-y-2 text-xs text-slate-600 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+              <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-brand-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <strong className="text-slate-800 block text-xs font-semibold">Endereço:</strong>
-                  <span>{celula.endereco} - {celula.bairro} (CEP: {celula.cep})</span>
+                  <strong className="text-slate-800 block text-xs font-bold">Localização:</strong>
+                  <span className="text-slate-700">
+                    Bairro {celula.itinerante ? celula.encontroAtual?.bairro : celula.bairro}, Timóteo - MG
+                    { (celula.itinerante ? celula.encontroAtual?.cep : celula.cep) && (
+                      <span className="text-slate-500 block text-[11px] mt-0.5">
+                        Região do CEP: {celula.itinerante ? celula.encontroAtual?.cep : celula.cep}
+                      </span>
+                    )}
+                  </span>
                 </div>
               </div>
-              {celula.pontoReferencia && (
-                <div className="flex items-start gap-2 pl-6 pt-1 text-[11px] text-slate-500">
-                  <span className="font-semibold text-slate-600">Ponto de ref.:</span>
-                  <span>{celula.pontoReferencia}</span>
-                </div>
-              )}
+
+              <div className="flex items-start gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-800 leading-tight">
+                <span className="font-bold flex-shrink-0">🔒 Privacidade:</span>
+                <span>Por segurança das famílias, o endereço exato da casa é informado diretamente pelo líder no WhatsApp.</span>
+              </div>
             </div>
 
             {/* Descrição / Faixa Etária */}

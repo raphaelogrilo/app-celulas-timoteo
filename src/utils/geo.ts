@@ -56,7 +56,11 @@ export function getWhatsAppLink(celula: Celula): string {
   const cleanPhone = celula.telefone.replace(/\D/g, '');
   const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
   
-  const message = `Olá líder ${celula.lider}! 👋\nEncontrei a *${celula.nome}* (${celula.bairro}) pelo aplicativo de células de Timóteo e gostaria de participar do próximo encontro (${celula.dia} às ${celula.horario}). Pode me passar mais detalhes?`;
+  const dia = celula.itinerante ? celula.encontroAtual?.dia : celula.dia;
+  const horario = celula.itinerante ? celula.encontroAtual?.horario : celula.horario;
+  const bairro = celula.itinerante ? celula.encontroAtual?.bairro : celula.bairro;
+
+  const message = `Olá líder ${celula.lider}! 👋\nVi a *${celula.nome}* (${bairro}) no app de células de Timóteo e gostaria de participar do próximo encontro (${dia || 'desta semana'} às ${horario || '19h30'}). Poderia me passar o endereço exato para eu ir?`;
   
   return `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`;
 }
