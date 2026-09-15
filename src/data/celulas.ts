@@ -204,12 +204,13 @@ export const CELULAS_SEED: Celula[] = [
     telefone: '(32) 99180-6896',
     dia: 'Sexta-feira',
     horario: '20:00',
+    endereco: 'Avenida Jovino Augusto da Silva, 509',
     bairro: 'Bromélias',
-    cep: '35180-450',
+    cep: '35180-514',
     faixaEtaria: 'Jovens (2 sextas e 2 sábados)',
     ativo: true,
     itinerante: false,
-    coords: { lat: -19.5730, lng: -42.6480 },
+    coords: { lat: -19.54438, lng: -42.65270 },
   },
 
   // ------------------------------------------------------------
