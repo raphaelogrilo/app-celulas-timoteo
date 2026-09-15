@@ -5,11 +5,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getCelulaById, getCelulaByLiderEmailOrUid, updateEncontroAtual } from '../services/celulaService';
-import { fetchCepData } from '../utils/geo';
+import { fetchCepData, geocodeAddress } from '../utils/geo';
 import { BAIRROS_TIMOTEO } from '../data/bairrosTimoteo';
 import type { Celula } from '../types/celula';
 import {
-  ArrowLeft, Save, Loader2, AlertCircle, MapPin, Calendar, Clock, Info, RefreshCw,
+  ArrowLeft, Save, Loader2, AlertCircle, MapPin, Calendar, Clock, Info, RefreshCw, Sparkles, CheckCircle2,
 } from 'lucide-react';
 
 const DIAS = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'] as const;
@@ -38,10 +38,12 @@ export default function ItineranteUpdate() {
   const [celula, setCelula] = useState<Celula | null>(null);
   const [loadingCep, setLoadingCep] = useState(false);
   const [cepMsg, setCepMsg] = useState<string | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geoFeedback, setGeoFeedback] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
-    register, handleSubmit, setValue,
+    register, handleSubmit, setValue, watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -94,11 +96,33 @@ export default function ItineranteUpdate() {
         setValue('dataReferencia', e.dataReferencia);
         setValue('lat', e.coords.lat);
         setValue('lng', e.coords.lng);
+        setGeoFeedback(`📍 Pin cadastrado: ${e.coords.lat.toFixed(4)}, ${e.coords.lng.toFixed(4)}`);
       }
     };
 
     loadData();
   }, [currentUser, celulaIdParam, isAdmin, navigate, setValue]);
+
+  const handleAddressGeocode = async () => {
+    const end = watch('endereco') || '';
+    const bai = watch('bairro') || '';
+    const cepVal = watch('cep') || '';
+
+    if (!end.trim() && !bai.trim()) return;
+
+    setIsGeocoding(true);
+    setGeoFeedback(null);
+
+    const coords = await geocodeAddress(end, bai, cepVal);
+    if (coords) {
+      setValue('lat', coords.lat);
+      setValue('lng', coords.lng);
+      setGeoFeedback(`📍 Localização exata encontrada no mapa: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+    } else {
+      setGeoFeedback('Não foi possível localizar o número exato, usando centro do bairro.');
+    }
+    setIsGeocoding(false);
+  };
 
   const handleCepBlur = async (cep: string) => {
     const digits = cep.replace(/\D/g, '');
@@ -107,9 +131,20 @@ export default function ItineranteUpdate() {
     setCepMsg(null);
     const data = await fetchCepData(digits);
     if (data && !data.erro) {
-      if (data.logradouro) setValue('endereco', data.logradouro);
+      if (data.logradouro && !watch('endereco')) {
+        setValue('endereco', data.logradouro);
+      }
       if (data.bairro) {
         setValue('bairro', data.bairro);
+      }
+
+      const coords = await geocodeAddress(data.logradouro || watch('endereco'), data.bairro || watch('bairro'), digits);
+      if (coords) {
+        setValue('lat', coords.lat);
+        setValue('lng', coords.lng);
+        setCepMsg(`✓ ${data.bairro || 'Timóteo'} encontrado`);
+        setGeoFeedback(`📍 Pin posicionado na coordenada exata: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+      } else {
         const found = BAIRROS_TIMOTEO.find(
           b => b.nome.toLowerCase() === (data.bairro ?? '').toLowerCase()
         );
@@ -117,8 +152,6 @@ export default function ItineranteUpdate() {
           setValue('lat', found.coords.lat);
           setValue('lng', found.coords.lng);
           setCepMsg(`✓ ${data.bairro} encontrado`);
-        } else {
-          setCepMsg(`Bairro "${data.bairro}" localizado. Verifique se está em Timóteo.`);
         }
       }
     } else {
@@ -284,12 +317,58 @@ export default function ItineranteUpdate() {
           </div>
         </div>
 
-        {/* Bairro e Observação */}
+        {/* Bairro e Endereço */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className={LABEL_CLASS}>Bairro</label>
-            <input {...register('bairro')} className={FIELD_CLASS} placeholder="Ex: Funcionários" />
+            <input
+              {...register('bairro')}
+              className={FIELD_CLASS}
+              placeholder="Ex: Funcionários"
+              onBlur={handleAddressGeocode}
+            />
             {errors.bairro && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.bairro.message}</p>}
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className={LABEL_CLASS + ' mb-0'}>
+                Endereço Completo (Rua e Nº)
+              </label>
+              <button
+                type="button"
+                onClick={handleAddressGeocode}
+                disabled={isGeocoding}
+                className="text-[11px] text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 cursor-pointer"
+              >
+                {isGeocoding ? (
+                  <><Loader2 className="w-3 h-3 animate-spin" /> Localizando...</>
+                ) : (
+                  <><Sparkles className="w-3 h-3" /> Localizar Pin</>
+                )}
+              </button>
+            </div>
+            <input
+              {...register('endereco')}
+              className={FIELD_CLASS}
+              placeholder="Ex: Rua 31 de Março, 240"
+              onBlur={handleAddressGeocode}
+            />
+          </div>
+        </div>
+
+        {geoFeedback && (
+          <p className="text-[11px] text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+            {geoFeedback}
+          </p>
+        )}
+
+        {/* Observação e Ponto de Referência */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={LABEL_CLASS}>Ponto de Referência (opcional)</label>
+            <input {...register('pontoReferencia')} className={FIELD_CLASS} placeholder="Ex: Casa com portão preto..." />
           </div>
 
           <div>

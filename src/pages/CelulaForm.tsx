@@ -11,13 +11,13 @@ import {
   getCelulaByLiderEmailOrUid,
 } from '../services/celulaService';
 import { vincularLiderCelula, getAllLideres } from '../services/authService';
-import { fetchCepData } from '../utils/geo';
+import { fetchCepData, geocodeAddress } from '../utils/geo';
 import { BAIRROS_TIMOTEO } from '../data/bairrosTimoteo';
 import type { LiderUser, LocalItinerante } from '../types/celula';
 import {
   ArrowLeft, Loader2, Save, AlertCircle, MapPin,
   Users, Calendar, Clock, Phone, FileText, Shield, Mail,
-  Trash2, Plus, CheckCircle2,
+  Trash2, Plus, CheckCircle2, Sparkles,
 } from 'lucide-react';
 
 const PERFIS = ['Jovens', 'Casais', 'Família', 'Homens', 'Mulheres', 'Teens', 'Misto'] as const;
@@ -71,6 +71,8 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
   const [isLoadingData, setIsLoadingData] = useState(mode === 'edit' || !!celulaIdParam);
   const [isLoadingCep, setIsLoadingCep] = useState(false);
   const [cepFeedback, setCepFeedback] = useState<string | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geoFeedback, setGeoFeedback] = useState<string | null>(null);
   const [existingId, setExistingId] = useState<string | null>(celulaIdParam);
   const [originalCelula, setOriginalCelula] = useState<any>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -82,6 +84,7 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
   const [novoLocal, setNovoLocal] = useState({
     identificador: '',
     cep: '',
+    endereco: '',
     bairro: '',
     dia: 'Quarta-feira',
     horario: '19:30',
@@ -164,13 +167,37 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
         setValue('endereco', celula.endereco ?? '');
         setValue('bairro', celula.bairro ?? '');
         setValue('pontoReferencia', celula.pontoReferencia ?? '');
-        if (celula.coords) setValue('coords', celula.coords);
+        if (celula.coords) {
+          setValue('coords', celula.coords);
+          setGeoFeedback(`📍 Pin cadastrado: ${celula.coords.lat.toFixed(4)}, ${celula.coords.lng.toFixed(4)}`);
+        }
       }
       setIsLoadingData(false);
     };
 
     loadData();
   }, [mode, celulaIdParam, currentUser, isAdmin, navigate, setValue]);
+
+  // Geocodificação precisa de Endereço Fixo
+  const handleAddressGeocode = async () => {
+    const end = watch('endereco') || '';
+    const bai = watch('bairro') || '';
+    const cepVal = watch('cep') || '';
+
+    if (!end.trim() && !bai.trim()) return;
+
+    setIsGeocoding(true);
+    setGeoFeedback(null);
+
+    const coords = await geocodeAddress(end, bai, cepVal);
+    if (coords) {
+      setValue('coords', coords);
+      setGeoFeedback(`📍 Localização exata encontrada no mapa: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+    } else {
+      setGeoFeedback('Não foi possível localizar o número exato, usando centro do bairro.');
+    }
+    setIsGeocoding(false);
+  };
 
   // Busca de CEP automática para Endereço Fixo
   const handleCepBlur = async (cepValue: string) => {
@@ -183,14 +210,23 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
     if (data && !data.erro) {
       if (data.bairro) {
         setValue('bairro', data.bairro);
+      }
+      if (data.logradouro && !watch('endereco')) {
+        setValue('endereco', data.logradouro);
+      }
+
+      const coords = await geocodeAddress(data.logradouro || watch('endereco'), data.bairro || watch('bairro'), digits);
+      if (coords) {
+        setValue('coords', coords);
+        setCepFeedback(`✓ Localizado: ${data.bairro || 'Timóteo'}`);
+        setGeoFeedback(`📍 Pin posicionado na coordenada exata: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+      } else {
         const found = BAIRROS_TIMOTEO.find(
           b => b.nome.toLowerCase() === (data.bairro ?? '').toLowerCase()
         );
         if (found) {
           setValue('coords', found.coords);
           setCepFeedback(`✓ Localizado: ${data.bairro}`);
-        } else {
-          setCepFeedback(`Bairro "${data.bairro}" encontrado. Verifique se está em Timóteo.`);
         }
       }
     } else {
@@ -249,6 +285,7 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
     setNovoLocal({
       identificador: '',
       cep: '',
+      endereco: '',
       bairro: '',
       dia: 'Quarta-feira',
       horario: '19:30',
@@ -715,9 +752,60 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
 
               <div>
                 <label className={LABEL_CLASS}>Bairro</label>
-                <input {...register('bairro')} className={FIELD_CLASS} placeholder="Ex: Funcionários" />
+                <input
+                  {...register('bairro')}
+                  className={FIELD_CLASS}
+                  placeholder="Ex: Funcionários"
+                  onBlur={handleAddressGeocode}
+                />
                 {errors.bairro && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.bairro.message}</p>}
               </div>
+            </div>
+
+            {/* Endereço Completo (Rua / Avenida e Número) */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className={LABEL_CLASS + ' mb-0'}>
+                  Endereço Completo (Rua / Avenida e Número)
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAddressGeocode}
+                  disabled={isGeocoding}
+                  className="text-[11px] text-brand-400 hover:text-brand-300 font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  {isGeocoding ? (
+                    <><Loader2 className="w-3 h-3 animate-spin" /> Localizando...</>
+                  ) : (
+                    <><Sparkles className="w-3 h-3" /> Localizar Pin Exato no Mapa</>
+                  )}
+                </button>
+              </div>
+              <input
+                {...register('endereco')}
+                className={FIELD_CLASS}
+                placeholder="Ex: Rua 31 de Março, 240"
+                onBlur={handleAddressGeocode}
+              />
+              <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                🔒 <em>O endereço exato posiciona o pin no mapa, mas fica protegido no app público (o visitante vê apenas o bairro).</em>
+              </p>
+              {geoFeedback && (
+                <p className="text-[11px] text-emerald-400 font-bold mt-1 bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-xl flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  {geoFeedback}
+                </p>
+              )}
+            </div>
+
+            {/* Ponto de Referência */}
+            <div>
+              <label className={LABEL_CLASS}>Ponto de Referência (opcional)</label>
+              <input
+                {...register('pontoReferencia')}
+                className={FIELD_CLASS}
+                placeholder="Ex: Próximo à Praça 1º de Maio, ao lado da padaria..."
+              />
             </div>
           </div>
         )}

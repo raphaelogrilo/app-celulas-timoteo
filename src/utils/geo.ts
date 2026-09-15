@@ -1,4 +1,5 @@
 import type { Coords, Celula, PerfilCelula } from '../types/celula';
+import { BAIRROS_TIMOTEO } from '../data/bairrosTimoteo';
 
 /**
  * Calcula a distância em quilômetros entre duas coordenadas usando a fórmula de Haversine
@@ -47,6 +48,92 @@ export async function fetchCepData(cepInput: string): Promise<{
     console.error('Erro ao consultar ViaCEP:', err);
     return null;
   }
+}
+
+/**
+ * Converte um endereço completo (Rua, Número, Bairro, CEP, Cidade) em coordenadas geográficas precisas (Lat, Lng)
+ * utilizando o serviço de geocodificação do OpenStreetMap (Nominatim) com fallback inteligente por bairro.
+ */
+export async function geocodeAddress(
+  enderecoCompleto?: string,
+  bairro?: string,
+  cep?: string,
+  cidade: string = 'Timóteo',
+  estado: string = 'MG'
+): Promise<Coords | null> {
+  // 1. Tenta consulta direta com endereço completo + bairro + cidade
+  const queryParts = [];
+  if (enderecoCompleto && enderecoCompleto.trim()) {
+    queryParts.push(enderecoCompleto.trim());
+  }
+  if (bairro && bairro.trim()) {
+    queryParts.push(bairro.trim());
+  }
+  queryParts.push(cidade);
+  queryParts.push(estado);
+  if (cep && cep.trim()) {
+    queryParts.push(cep.trim());
+  }
+  queryParts.push('Brasil');
+
+  const fullQuery = queryParts.join(', ');
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}&limit=1`;
+    const res = await fetch(url, {
+      headers: {
+        'Accept-Language': 'pt-BR',
+      },
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0 && data[0].lat && data[0].lon) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon),
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Geocodificação de endereço detalhado falhou, tentando fallback:', err);
+  }
+
+  // 2. Se falhar e tiver apenas rua/logradouro (sem o número), tenta buscar o logradouro no bairro
+  if (enderecoCompleto && enderecoCompleto.includes(',')) {
+    const logradouro = enderecoCompleto.split(',')[0].trim();
+    try {
+      const streetQuery = `${logradouro}, ${bairro || ''}, ${cidade}, ${estado}, Brasil`;
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetQuery)}&limit=1`;
+      const res = await fetch(url, {
+        headers: { 'Accept-Language': 'pt-BR' },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0 && data[0].lat && data[0].lon) {
+          return {
+            lat: parseFloat(data[0].lat),
+            lng: parseFloat(data[0].lon),
+          };
+        }
+      }
+    } catch {
+      // continua para fallback
+    }
+  }
+
+  // 3. Fallback: Coordenadas do Bairro cadastrado
+  if (bairro) {
+    const cleanBairro = bairro.toLowerCase().trim();
+    const found = BAIRROS_TIMOTEO.find(
+      b => b.nome.toLowerCase().trim() === cleanBairro || cleanBairro.includes(b.nome.toLowerCase().trim())
+    );
+    if (found) {
+      return found.coords;
+    }
+  }
+
+  return null;
 }
 
 /**
