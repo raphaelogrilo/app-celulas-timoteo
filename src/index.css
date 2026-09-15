@@ -65,10 +65,14 @@ html, body {
   bottom: calc(var(--sab) + 12px) !important;
 }
 
-/* Marcador Customizado com SVG */
-.custom-cell-pin {
-  background: transparent;
-  border: none;
+/* Marcadores Customizados com SVG */
+.custom-cell-pin,
+.custom-cell-pin-svg,
+.custom-church-pin,
+.custom-user-pin,
+.exact-pin-marker {
+  background: transparent !important;
+  border: none !important;
 }
 
 .pin-container {
