@@ -73,13 +73,22 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 space-y-3">
             <button
               onClick={onClose}
               className="w-full py-3.5 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm shadow-lg shadow-brand-600/30 active:scale-95 transition-all"
             >
               Entendido, quero encontrar!
             </button>
+
+            <div className="text-center pt-1">
+              <a
+                href="/lider/login"
+                className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                Área de Líderes e Administração →
+              </a>
+            </div>
           </div>
         </motion.div>
       </div>

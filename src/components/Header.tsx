@@ -1,5 +1,6 @@
 import React from 'react';
-import { MapPin, Info, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { MapPin, Info, Loader2, Shield } from 'lucide-react';
 import { AtosLogo } from './AtosLogo';
 
 interface HeaderProps {
@@ -49,15 +50,26 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Botão de Ajuda / Info */}
-        <button
-          onClick={onOpenInfo}
-          type="button"
-          aria-label="Sobre o app de células"
-          className="w-9 h-9 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 flex items-center justify-center text-slate-300 hover:text-white transition-colors active:scale-95 shadow-soft"
-        >
-          <Info className="w-4 h-4" />
-        </button>
+        {/* Botões do Topo: Acesso Discreto Admin/Líder e Info */}
+        <div className="flex items-center gap-1.5">
+          <Link
+            to="/lider/login"
+            aria-label="Painel Administrativo e Líderes"
+            title="Acesso Líderes / Admin"
+            className="w-9 h-9 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 flex items-center justify-center text-slate-400 hover:text-brand-400 transition-colors active:scale-95 shadow-soft"
+          >
+            <Shield className="w-4 h-4" />
+          </Link>
+
+          <button
+            onClick={onOpenInfo}
+            type="button"
+            aria-label="Sobre o app de células"
+            className="w-9 h-9 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 flex items-center justify-center text-slate-300 hover:text-white transition-colors active:scale-95 shadow-soft"
+          >
+            <Info className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </header>
   );
