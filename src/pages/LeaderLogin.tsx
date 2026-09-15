@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Compass, AlertCircle, Loader2, LogOut } from 'lucide-react';
+import { AlertCircle, Loader2, LogOut } from 'lucide-react';
 
 import { AtosLogo } from '../components/AtosLogo';
 

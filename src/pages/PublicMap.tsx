@@ -9,6 +9,7 @@ import { MapContainer } from '../components/MapContainer';
 import { BottomSheet } from '../components/BottomSheet';
 import { ListView } from '../components/ListView';
 import { InfoModal } from '../components/InfoModal';
+import { ChurchModal } from '../components/ChurchModal';
 
 export default function PublicMap() {
   const [selectedCelula, setSelectedCelula] = useState<Celula | null>(null);
@@ -17,6 +18,7 @@ export default function PublicMap() {
   const [selectedDia, setSelectedDia] = useState<DiaSemana>('Todos');
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [isChurchModalOpen, setIsChurchModalOpen] = useState(false);
   const [targetCoords, setTargetCoords] = useState<Coords | null>(null);
 
   const [userLocation, setUserLocation] = useState<UserLocation>({
@@ -122,6 +124,7 @@ export default function PublicMap() {
             celulas={filteredCelulas}
             selectedCelula={selectedCelula}
             onSelectCelula={setSelectedCelula}
+            onOpenChurch={() => setIsChurchModalOpen(true)}
             userLocation={userLocation}
             onRequestUserLocation={handleRequestUserLocation}
             viewMode={viewMode}
@@ -149,6 +152,7 @@ export default function PublicMap() {
       </div>
 
       <BottomSheet celula={selectedCelula} onClose={() => setSelectedCelula(null)} />
+      <ChurchModal isOpen={isChurchModalOpen} onClose={() => setIsChurchModalOpen(false)} />
       <InfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
     </main>
   );

@@ -83,8 +83,20 @@ export const BAIRROS_TIMOTEO: BairroTimoteo[] = [
   }
 ];
 
+export const IGREJA_ATOS_SEDE = {
+  nome: 'Igreja Atos · Sede',
+  endereco: 'Rua 95, nº 6F',
+  enderecoCompleto: 'Rua: 95, nº 6F - João XXIII, Timóteo - MG (CEP 35180-368)',
+  bairro: 'João XXIII',
+  cep: '35180-368',
+  cidade: 'Timóteo - MG',
+  coords: { lat: -19.5930, lng: -42.6470 },
+  cultos: 'Domingo às 10h e 18h · Quarta às 19h30',
+  telefone: '(31) 99871-1000',
+};
+
 export const TIMOTEO_CENTER = {
-  lat: -19.5828,
-  lng: -42.6436,
-  zoom: 13,
+  lat: -19.5900,
+  lng: -42.6450,
+  zoom: 13.5,
 };

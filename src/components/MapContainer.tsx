@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { MapContainer as LeafletMap, TileLayer, Marker, useMap, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import type { Celula, Coords, UserLocation } from '../types/celula';
-import { TIMOTEO_CENTER } from '../data/bairrosTimoteo';
+import { TIMOTEO_CENTER, IGREJA_ATOS_SEDE } from '../data/bairrosTimoteo';
 import { getProfileStyle } from '../utils/geo';
 import { Locate, RotateCcw, List, Map as MapIcon, Loader2 } from 'lucide-react';
 
@@ -10,6 +10,7 @@ interface MapViewProps {
   celulas: Celula[];
   selectedCelula: Celula | null;
   onSelectCelula: (celula: Celula) => void;
+  onOpenChurch?: () => void;
   userLocation: UserLocation;
   onRequestUserLocation: () => void;
   viewMode: 'map' | 'list';
@@ -40,6 +41,53 @@ const MapController: React.FC<{
   }, [targetCoords, selectedCelula, map]);
 
   return null;
+};
+
+// Gerador de ícone customizado SVG para a Sede da Igreja Atos (Marcador Amarelo / Ouro)
+const createIgrejaSedePinIcon = () => {
+  const html = `
+    <div class="pin-container" style="cursor: pointer; z-index: 1000; position: relative;">
+      <div style="
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(135deg, #FBBF24, #F59E0B);
+        color: #0f172a;
+        padding: 5px 10px;
+        border-radius: 9999px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 11px;
+        font-weight: 800;
+        box-shadow: 0 4px 16px rgba(245, 158, 11, 0.6), 0 2px 4px rgba(0,0,0,0.3);
+        border: 2px solid #ffffff;
+        white-space: nowrap;
+        transform: scale(1.05);
+      ">
+        <svg style="width: 14px; height: 14px;" viewBox="0 0 100 100" fill="none">
+          <circle cx="50" cy="50" r="42" stroke="#0f172a" stroke-width="12"/>
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M50 22L72 58L50 82L28 58L50 22ZM50 44L61 62H39L50 44Z" fill="#0f172a"/>
+        </svg>
+        <span style="letter-spacing: -0.01em;">Igreja Atos · Sede</span>
+      </div>
+      <div style="
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 7px solid #F59E0B;
+        margin-top: -1px;
+        margin-left: auto;
+        margin-right: auto;
+      "></div>
+    </div>
+  `;
+
+  return L.divIcon({
+    className: 'custom-church-pin',
+    html: html,
+    iconSize: [140, 42],
+    iconAnchor: [70, 42],
+  });
 };
 
 // Gerador de ícone customizado SVG para pins de células
@@ -77,6 +125,8 @@ const createCustomPinIcon = (celula: Celula, isSelected: boolean) => {
         border-right: 6px solid transparent;
         border-top: 7px solid ${style.pinBg};
         margin-top: -1px;
+        margin-left: auto;
+        margin-right: auto;
       "></div>
       <div class="pin-pulse"></div>
     </div>
@@ -111,6 +161,7 @@ export const MapContainer: React.FC<MapViewProps> = ({
   celulas,
   selectedCelula,
   onSelectCelula,
+  onOpenChurch,
   userLocation,
   onRequestUserLocation,
   viewMode,
@@ -151,6 +202,15 @@ export const MapContainer: React.FC<MapViewProps> = ({
         <MapController
           targetCoords={targetCoords}
           selectedCelula={selectedCelula}
+        />
+
+        {/* MARCADOR FIXO AMARELO DA SEDE DA IGREJA ATOS */}
+        <Marker
+          position={[IGREJA_ATOS_SEDE.coords.lat, IGREJA_ATOS_SEDE.coords.lng]}
+          icon={createIgrejaSedePinIcon()}
+          eventHandlers={{
+            click: () => onOpenChurch && onOpenChurch(),
+          }}
         />
 
         {/* Marcadores das Células */}
