@@ -265,25 +265,55 @@ export interface ProfileStyle {
 
 export function getProfileStyle(perfil: PerfilCelula | string): ProfileStyle {
   switch (perfil) {
-    case 'Jovens':
+    case 'Homens':
       return {
-        bg: 'bg-[#FFF5ED]',
-        border: 'border-[#FED7AA]',
-        text: 'text-[#C2410C]',
-        badgeBg: 'bg-[#FA6400]',
+        bg: 'bg-[#F8F4F1]',
+        border: 'border-[#D3C1B7]',
+        text: 'text-[#3E1F11]',
+        badgeBg: 'bg-[#3E1F11]',
         badgeText: 'text-white font-extrabold',
-        markerColor: '#FA6400',
-        pinBg: '#FA6400',
+        markerColor: '#3E1F11',
+        pinBg: '#3E1F11',
+      };
+    case 'Mulheres':
+      return {
+        bg: 'bg-[#FDF3F6]',
+        border: 'border-[#EAC8D5]',
+        text: 'text-[#8E284B]',
+        badgeBg: 'bg-[#B14468]',
+        badgeText: 'text-white font-extrabold',
+        markerColor: '#B14468',
+        pinBg: '#B14468',
       };
     case 'Casais':
       return {
-        bg: 'bg-[#FFF8F2]',
-        border: 'border-[#FED7AA]',
-        text: 'text-[#B45309]',
-        badgeBg: 'bg-[#F89E50]',
+        bg: 'bg-[#FCF8F0]',
+        border: 'border-[#EAD3AE]',
+        text: 'text-[#7D5319]',
+        badgeBg: 'bg-[#C69248]',
+        badgeText: 'text-slate-950 font-black',
+        markerColor: '#C69248',
+        pinBg: '#C69248',
+      };
+    case 'Jovens':
+      return {
+        bg: 'bg-[#FDF4F2]',
+        border: 'border-[#F4C5BC]',
+        text: 'text-[#992508]',
+        badgeBg: 'bg-[#CB3F1C]',
         badgeText: 'text-white font-extrabold',
-        markerColor: '#F89E50',
-        pinBg: '#F89E50',
+        markerColor: '#CB3F1C',
+        pinBg: '#CB3F1C',
+      };
+    case 'Teens':
+      return {
+        bg: 'bg-[#FDF2F3]',
+        border: 'border-[#E8B8BD]',
+        text: 'text-[#680913]',
+        badgeBg: 'bg-[#8C111D]',
+        badgeText: 'text-white font-extrabold',
+        markerColor: '#8C111D',
+        pinBg: '#8C111D',
       };
     case 'Família':
       return {
@@ -291,39 +321,9 @@ export function getProfileStyle(perfil: PerfilCelula | string): ProfileStyle {
         border: 'border-blue-200',
         text: 'text-blue-700',
         badgeBg: 'bg-blue-600',
-        badgeText: 'text-white',
+        badgeText: 'text-white font-bold',
         markerColor: '#2563eb',
         pinBg: '#2563eb',
-      };
-    case 'Mulheres':
-      return {
-        bg: 'bg-[#FDF2F4]',
-        border: 'border-[#E8BAC7]',
-        text: 'text-[#9B3D55]',
-        badgeBg: 'bg-[#B75D74]',
-        badgeText: 'text-white',
-        markerColor: '#B75D74',
-        pinBg: '#B75D74',
-      };
-    case 'Homens':
-      return {
-        bg: 'bg-[#F7F3EE]',
-        border: 'border-[#D7CCC8]',
-        text: 'text-[#5D4037]',
-        badgeBg: 'bg-[#6D4C41]',
-        badgeText: 'text-white font-extrabold',
-        markerColor: '#6D4C41',
-        pinBg: '#6D4C41',
-      };
-    case 'Teens':
-      return {
-        bg: 'bg-[#FEF2F2]',
-        border: 'border-[#FECACA]',
-        text: 'text-[#DC2626]',
-        badgeBg: 'bg-[#E62129]',
-        badgeText: 'text-white font-extrabold',
-        markerColor: '#E62129',
-        pinBg: '#E62129',
       };
     default:
       return {
