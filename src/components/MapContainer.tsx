@@ -4,7 +4,6 @@ import L from 'leaflet';
 import type { Celula, Coords, UserLocation } from '../types/celula';
 import { TIMOTEO_CENTER } from '../data/bairrosTimoteo';
 import { useIgrejaSede } from '../hooks/useIgrejaSede';
-import { getProfileStyle } from '../utils/geo';
 import { Locate, RotateCcw, List, Map as MapIcon, Loader2 } from 'lucide-react';
 
 interface MapViewProps {
@@ -91,58 +90,58 @@ const createIgrejaSedePinIcon = () => {
   });
 };
 
-// Gerador de ícone customizado SVG para pins de células (COMPACTO: SOMENTE O NOME DA CÉLULA)
-const createCustomPinIcon = (celula: Celula, isSelected: boolean) => {
-  const style = getProfileStyle(celula.perfil);
+// Determina a URL do pin SVG oficial de acordo com o ministério / perfil
+export const getPinSvgUrl = (perfil?: string, ministerio?: string): string => {
+  const min = (ministerio || '').toLowerCase();
+  const perf = (perfil || '').toLowerCase();
 
-  // Extrai somente o nome curto (ex: "Tocha", "Celeiro 1", "Fire", "Mista 1")
-  const shortName = celula.nome
-    .split('·')[0]
-    .split('-')[0]
-    .replace(/^célula\s+/i, '')
-    .trim();
+  if (min.includes('homem') || perf.includes('homem')) return '/pins/homens.svg';
+  if (min.includes('mulher') || perf.includes('mulher')) return '/pins/mulheres.svg';
+  if (min.includes('hope') || perf.includes('casai') || perf.includes('casal')) return '/pins/hope.svg';
+  if (min.includes('flamma') || perf.includes('joven') || perf.includes('jovem')) return '/pins/flamma.svg';
+  if (min.includes('flick') || perf.includes('teen') || perf.includes('adolescente')) return '/pins/flick.svg';
+  
+  return '/pins/hope.svg';
+};
+
+// Gerador de ícone customizado SVG OFICIAL para pins de células (PIN GRÁFICO, SEM NOMES)
+const createCustomPinIcon = (celula: Celula, isSelected: boolean) => {
+  const pinUrl = getPinSvgUrl(celula.perfil, celula.ministerio);
+  const width = isSelected ? 42 : 36;
+  const height = isSelected ? 57.5 : 49.25;
 
   const html = `
-    <div class="pin-container ${isSelected ? 'selected' : ''}" style="cursor: pointer; position: relative;">
-      <div style="
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        background-color: ${style.pinBg};
-        color: white;
-        padding: 3px 8px;
-        border-radius: 9999px;
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: 10.5px;
-        font-weight: 750;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-        border: 1.5px solid #ffffff;
-        transform: ${isSelected ? 'scale(1.18)' : 'scale(1)'};
-        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-        white-space: nowrap;
-      ">
-        <span style="width: 5px; height: 5px; border-radius: 50%; background: white; display: inline-block;"></span>
-        <span>${shortName}</span>
-      </div>
-      <div style="
-        width: 0;
-        height: 0;
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        border-top: 6px solid ${style.pinBg};
-        margin-top: -1px;
-        margin-left: auto;
-        margin-right: auto;
-      "></div>
-      <div class="pin-pulse"></div>
+    <div class="pin-svg-container ${isSelected ? 'selected' : ''}" style="
+      position: relative;
+      width: ${width}px;
+      height: ${height}px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease;
+      filter: ${isSelected ? 'drop-shadow(0 0 12px rgba(251, 191, 36, 0.9)) drop-shadow(0 6px 12px rgba(0,0,0,0.5))' : 'drop-shadow(0 4px 8px rgba(0,0,0,0.45))'};
+      transform: ${isSelected ? 'scale(1.18) translateY(-6px)' : 'scale(1)'};
+    ">
+      <img
+        src="${pinUrl}"
+        alt=""
+        style="
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          pointer-events: none;
+          display: block;
+        "
+      />
     </div>
   `;
 
   return L.divIcon({
-    className: 'custom-cell-pin',
+    className: 'custom-cell-pin-svg',
     html: html,
-    iconSize: [80, 36],
-    iconAnchor: [40, 36],
+    iconSize: [width, height],
+    iconAnchor: [width / 2, height],
   });
 };
 
