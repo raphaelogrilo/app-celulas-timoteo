@@ -241,15 +241,30 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
   const LABEL_CLASS = `block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5`;
 
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      <header className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-white/10 px-4 lg:px-8 py-3.5">
-        <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-colors">
-            <ArrowLeft className="w-4 h-4" />
+    <div className="min-h-dvh bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white flex flex-col">
+      <header className="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md border-b border-white/10 px-4 lg:px-8 py-3.5">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <h1 className="text-sm md:text-base font-bold text-white">
+              {mode === 'edit' || celulaIdParam ? 'Editar Célula' : 'Cadastrar Célula'}
+            </h1>
+          </div>
+
+          <button
+            type="submit"
+            form="celula-form"
+            disabled={isSubmitting}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-60 text-white font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer"
+          >
+            {isSubmitting ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Salvando...</>
+            ) : (
+              <><Save className="w-3.5 h-3.5" /> Salvar</>
+            )}
           </button>
-          <h1 className="text-sm md:text-base font-bold text-white">
-            {mode === 'edit' || celulaIdParam ? 'Editar Célula' : 'Cadastrar Célula'}
-          </h1>
         </div>
       </header>
 
@@ -259,7 +274,12 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
           <p className="text-xs">Carregando dados da célula...</p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit(onSubmit as any)} className="max-w-3xl mx-auto px-4 lg:px-8 py-6 lg:py-8 space-y-6" noValidate>
+        <form
+          id="celula-form"
+          onSubmit={handleSubmit(onSubmit as any)}
+          className="max-w-3xl w-full mx-auto px-4 lg:px-8 py-6 lg:py-8 space-y-6 pb-28 flex-1"
+          noValidate
+        >
 
         {/* Nome e Perfil (Grid responsivo no Desktop) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -455,18 +475,22 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
           </div>
         )}
 
-        {/* Botão Salvar */}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full py-4 rounded-2xl bg-brand-600 hover:bg-brand-500 disabled:opacity-60 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-[0.98] transition-all"
-        >
-          {isSubmitting ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
-          ) : (
-            <><Save className="w-4 h-4" /> {mode === 'edit' ? 'Salvar Alterações' : 'Cadastrar Célula'}</>
-          )}
-        </button>
+        {/* Botão Salvar com Barra Flutuante/Fixa */}
+        <div className="pt-4 sticky bottom-4 z-20">
+          <div className="p-2 rounded-2xl bg-slate-950/85 backdrop-blur-lg border border-white/10 shadow-2xl">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-4 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-60 text-white font-extrabold text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-brand-500/25 active:scale-[0.98] transition-all cursor-pointer"
+            >
+              {isSubmitting ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Salvando Alterações...</>
+              ) : (
+                <><Save className="w-4 h-4" /> {mode === 'edit' || celulaIdParam ? 'Salvar Alterações da Célula' : 'Cadastrar Nova Célula'}</>
+              )}
+            </button>
+          </div>
+        </div>
         </form>
       )}
     </div>

@@ -158,9 +158,9 @@ export default function ItineranteUpdate() {
   const ERROR_CLASS = `text-[11px] text-red-400 mt-1 flex items-center gap-1`;
 
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      <header className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-white/10 px-4 lg:px-8 py-3.5">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
+    <div className="min-h-dvh bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white flex flex-col">
+      <header className="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md border-b border-white/10 px-4 lg:px-8 py-3.5">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-colors">
               <ArrowLeft className="w-4 h-4" />
@@ -173,10 +173,28 @@ export default function ItineranteUpdate() {
               {celula && <div className="text-[11px] text-amber-400/80">{celula.nome}</div>}
             </div>
           </div>
+
+          <button
+            type="submit"
+            form="itinerante-form"
+            disabled={isSubmitting}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-white font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer"
+          >
+            {isSubmitting ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Salvando...</>
+            ) : (
+              <><Save className="w-3.5 h-3.5" /> Salvar</>
+            )}
+          </button>
         </div>
       </header>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl mx-auto px-4 lg:px-8 py-6 lg:py-8 space-y-6" noValidate>
+      <form
+        id="itinerante-form"
+        onSubmit={handleSubmit(onSubmit)}
+        className="max-w-3xl w-full mx-auto px-4 lg:px-8 py-6 lg:py-8 space-y-6 pb-28 flex-1"
+        noValidate
+      >
 
         {/* Aviso contextual */}
         <div className="p-4 md:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
@@ -269,17 +287,22 @@ export default function ItineranteUpdate() {
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 active:scale-[0.98] transition-all"
-        >
-          {isSubmitting ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Atualizando...</>
-          ) : (
-            <><Save className="w-4 h-4" /> Publicar no Mapa</>
-          )}
-        </button>
+        {/* Botão Salvar com Barra Flutuante/Fixa */}
+        <div className="pt-4 sticky bottom-4 z-20">
+          <div className="p-2 rounded-2xl bg-slate-950/85 backdrop-blur-lg border border-white/10 shadow-2xl">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-white font-extrabold text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-amber-500/25 active:scale-[0.98] transition-all cursor-pointer"
+            >
+              {isSubmitting ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Atualizando Semana...</>
+              ) : (
+                <><Save className="w-4 h-4" /> Publicar Endereço no Mapa</>
+              )}
+            </button>
+          </div>
+        </div>
       </form>
     </div>
   );
