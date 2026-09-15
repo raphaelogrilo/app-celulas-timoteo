@@ -114,13 +114,13 @@ export function getProfileStyle(perfil: PerfilCelula | string): ProfileStyle {
       };
     case 'Casais':
       return {
-        bg: 'bg-rose-50',
-        border: 'border-rose-200',
-        text: 'text-rose-700',
-        badgeBg: 'bg-rose-600',
-        badgeText: 'text-white',
-        markerColor: '#e11d48',
-        pinBg: '#e11d48',
+        bg: 'bg-[#FFF8F2]',
+        border: 'border-[#FED7AA]',
+        text: 'text-[#B45309]',
+        badgeBg: 'bg-[#F89E50]',
+        badgeText: 'text-white font-extrabold',
+        markerColor: '#F89E50',
+        pinBg: '#F89E50',
       };
     case 'Família':
       return {
