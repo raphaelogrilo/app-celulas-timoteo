@@ -154,13 +154,13 @@ export function getProfileStyle(perfil: PerfilCelula | string): ProfileStyle {
       };
     case 'Teens':
       return {
-        bg: 'bg-amber-50',
-        border: 'border-amber-200',
-        text: 'text-amber-700',
-        badgeBg: 'bg-amber-500',
-        badgeText: 'text-white',
-        markerColor: '#d97706',
-        pinBg: '#d97706',
+        bg: 'bg-[#FEF2F2]',
+        border: 'border-[#FECACA]',
+        text: 'text-[#DC2626]',
+        badgeBg: 'bg-[#E62129]',
+        badgeText: 'text-white font-extrabold',
+        markerColor: '#E62129',
+        pinBg: '#E62129',
       };
     default:
       return {
