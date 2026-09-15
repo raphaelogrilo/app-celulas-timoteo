@@ -214,13 +214,13 @@ export const CELULAS_SEED: Celula[] = [
   },
 
   // ------------------------------------------------------------
-  // 5. MINISTÉRIO FLICK (Perfil: Teens)
+  // 5. MINISTÉRIO FLICK (Perfil: Adolescentes)
   // ------------------------------------------------------------
   {
     id: 'cel-flick-1',
     nome: 'Brasa · Flick',
     ministerio: 'Ministério Flick (Adolescentes)',
-    perfil: 'Teens',
+    perfil: 'Adolescentes',
     lider: 'Vera',
     telefone: '(31) 98662-3476',
     dia: 'Quinta-feira',
@@ -236,7 +236,7 @@ export const CELULAS_SEED: Celula[] = [
     id: 'cel-flick-2',
     nome: 'Fire · Flick',
     ministerio: 'Ministério Flick (Adolescentes)',
-    perfil: 'Teens',
+    perfil: 'Adolescentes',
     lider: 'Edenia',
     telefone: '(31) 98599-9229',
     dia: 'Quinta-feira',
