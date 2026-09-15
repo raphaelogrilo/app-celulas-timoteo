@@ -1,9 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
-import type { Celula, PerfilCelula, DiaSemana, UserLocation, Coords, BairroTimoteo } from '../types/celula';
+import type { Celula, PerfilCelula, DiaSemana, UserLocation, Coords } from '../types/celula';
 import { useCelulas } from '../hooks/useCelulas';
 import { TIMOTEO_CENTER } from '../data/bairrosTimoteo';
 import { Header } from '../components/Header';
-import { SearchBar } from '../components/SearchBar';
 import { FilterChips } from '../components/FilterChips';
 import { MapContainer } from '../components/MapContainer';
 import { BottomSheet } from '../components/BottomSheet';
@@ -13,7 +12,6 @@ import { ChurchModal } from '../components/ChurchModal';
 
 export default function PublicMap() {
   const [selectedCelula, setSelectedCelula] = useState<Celula | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedPerfil, setSelectedPerfil] = useState<PerfilCelula>('Todos');
   const [selectedDia, setSelectedDia] = useState<DiaSemana>('Todos');
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
@@ -52,7 +50,7 @@ export default function PublicMap() {
     );
   }, []);
 
-  // Filtragem
+  // Filtragem por Perfil e Dia
   const filteredCelulas = useMemo(() => {
     return allCelulas
       .filter((celula) => {
@@ -62,16 +60,6 @@ export default function PublicMap() {
         const diaEfetivo = celula.itinerante ? celula.encontroAtual?.dia : celula.dia;
         if (selectedDia !== 'Todos' && diaEfetivo !== selectedDia) return false;
 
-        if (searchTerm.trim() !== '') {
-          const q = searchTerm.toLowerCase().trim();
-          const bairroEfetivo = celula.itinerante ? celula.encontroAtual?.bairro : celula.bairro;
-          return (
-            celula.nome.toLowerCase().includes(q) ||
-            celula.lider.toLowerCase().includes(q) ||
-            (bairroEfetivo ?? '').toLowerCase().includes(q) ||
-            (celula.cep ?? '').replace(/\D/g, '').includes(q.replace(/\D/g, ''))
-          );
-        }
         return true;
       })
       .sort((a, b) => {
@@ -80,17 +68,11 @@ export default function PublicMap() {
         }
         return a.nome.localeCompare(b.nome);
       });
-  }, [allCelulas, selectedPerfil, selectedDia, searchTerm]);
-
-  const handleSelectBairro = (bairro: BairroTimoteo) => {
-    setSearchTerm(bairro.nome);
-    setTargetCoords(bairro.coords);
-  };
+  }, [allCelulas, selectedPerfil, selectedDia]);
 
   const handleResetFilters = () => {
     setSelectedPerfil('Todos');
     setSelectedDia('Todos');
-    setSearchTerm('');
     setTargetCoords({ lat: TIMOTEO_CENTER.lat, lng: TIMOTEO_CENTER.lng });
   };
 
@@ -101,13 +83,6 @@ export default function PublicMap() {
         filteredCount={filteredCelulas.length}
         onOpenInfo={() => setIsInfoOpen(true)}
         loading={loadingCelulas}
-      />
-
-      <SearchBar
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        onSelectBairro={handleSelectBairro}
-        onClearSearch={() => setSearchTerm('')}
       />
 
       <FilterChips
