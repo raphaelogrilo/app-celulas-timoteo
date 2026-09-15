@@ -5,20 +5,14 @@ import type { Celula } from '../types/celula';
 import {
   X,
   MessageCircle,
-  Navigation,
-  Phone,
   Calendar,
   Clock,
   MapPin,
-  Compass,
   Share2,
   Check,
 } from 'lucide-react';
 import {
   getWhatsAppLink,
-  getGoogleMapsRouteLink,
-  getWazeRouteLink,
-  getTelLink,
   getProfileStyle,
 } from '../utils/geo';
 
@@ -31,7 +25,6 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   celula,
   onClose,
 }) => {
-  const [showNavOptions, setShowNavOptions] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
   if (!celula) return null;
@@ -181,11 +174,13 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               </div>
 
               <a
-                href={getTelLink(celula)}
-                className="w-9 h-9 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-all"
-                title="Ligar para o líder"
+                href={getWhatsAppLink(celula)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 flex items-center justify-center shadow-sm active:scale-95 transition-all"
+                title="Conversar no WhatsApp"
               >
-                <Phone className="w-4 h-4 text-slate-600" />
+                <MessageCircle className="w-4 h-4 fill-emerald-600" />
               </a>
             </div>
 
@@ -219,9 +214,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               </p>
             )}
 
-            {/* Ações Principais (Thumb Zone - CTAs) */}
-            <div className="pt-2 space-y-2.5 pb-[calc(var(--sab)+6px)]">
-              {/* Botão Primário: Falar no WhatsApp */}
+            {/* Ação Principal: Falar no WhatsApp */}
+            <div className="pt-2 pb-[calc(var(--sab)+6px)]">
               <a
                 href={getWhatsAppLink(celula)}
                 target="_blank"
@@ -231,52 +225,6 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                 <MessageCircle className="w-5 h-5 fill-white" />
                 <span>Falar com o Líder no WhatsApp</span>
               </a>
-
-              {/* Botões Secundários: Como Chegar e Ligar */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowNavOptions(!showNavOptions)}
-                    className="w-full py-3 px-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-soft active:scale-[0.98] transition-all"
-                  >
-                    <Navigation className="w-4 h-4 text-brand-400" />
-                    <span>Como Chegar</span>
-                  </button>
-
-                  {/* Dropdown de aplicativos de navegação */}
-                  {showNavOptions && (
-                    <div className="absolute bottom-full left-0 right-0 mb-2 p-1.5 bg-slate-900 rounded-2xl shadow-xl border border-slate-700 space-y-1 z-30 animate-in fade-in slide-in-from-bottom-2">
-                      <a
-                        href={getGoogleMapsRouteLink(celula)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 rounded-xl flex items-center gap-2"
-                      >
-                        <Compass className="w-4 h-4 text-red-400" />
-                        Google Maps
-                      </a>
-                      <a
-                        href={getWazeRouteLink(celula)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 rounded-xl flex items-center gap-2"
-                      >
-                        <Navigation className="w-4 h-4 text-cyan-400" />
-                        Waze
-                      </a>
-                    </div>
-                  )}
-                </div>
-
-                <a
-                  href={getTelLink(celula)}
-                  className="w-full py-3 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs flex items-center justify-center gap-2 border border-slate-200/80 active:scale-[0.98] transition-all"
-                >
-                  <Phone className="w-4 h-4 text-slate-600" />
-                  <span>Ligar Direto</span>
-                </a>
-              </div>
             </div>
           </div>
         </motion.div>
