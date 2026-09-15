@@ -17,7 +17,7 @@ import type { LiderUser, LocalItinerante } from '../types/celula';
 import {
   ArrowLeft, Loader2, Save, AlertCircle, MapPin,
   Users, Calendar, Clock, Phone, FileText, Shield, Mail,
-  Trash2, Plus, CheckCircle2, Sparkles,
+  Trash2, Plus, CheckCircle2, Sparkles, Edit3,
 } from 'lucide-react';
 
 export const MINISTERIOS_OPCOES = [
@@ -112,7 +112,7 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
   });
 
   const {
-    register, handleSubmit, watch, setValue,
+    register, handleSubmit, watch, setValue, reset, setFocus,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(baseSchema) as any,
@@ -160,17 +160,28 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
 
       setExistingId(celula.id);
       setOriginalCelula(celula);
-      setValue('nome', celula.nome);
+
       const matchedMin = celula.ministerio || MINISTERIOS_OPCOES.find(m => m.perfil === celula.perfil)?.valor || '';
-      setValue('ministerio', matchedMin);
-      setValue('perfil', celula.perfil || MINISTERIOS_OPCOES.find(m => m.valor === matchedMin)?.perfil || 'Misto');
-      setValue('lider', celula.lider);
-      setValue('telefone', celula.telefone);
-      setValue('liderEmail', celula.liderEmail ?? '');
-      setValue('descricao', celula.descricao ?? '');
-      setValue('faixaEtaria', celula.faixaEtaria ?? '');
-      setValue('itinerante', celula.itinerante);
-      setValue('ativo', celula.ativo);
+      const perfilFinal = celula.perfil || MINISTERIOS_OPCOES.find(m => m.valor === matchedMin)?.perfil || 'Homens';
+
+      reset({
+        nome: celula.nome || '',
+        ministerio: matchedMin,
+        perfil: perfilFinal,
+        lider: celula.lider || '',
+        telefone: celula.telefone || '',
+        liderEmail: celula.liderEmail ?? '',
+        descricao: celula.descricao ?? '',
+        faixaEtaria: celula.faixaEtaria ?? '',
+        itinerante: !!celula.itinerante,
+        ativo: celula.ativo !== false,
+        dia: celula.dia ?? '',
+        horario: celula.horario ?? '',
+        endereco: celula.endereco ?? '',
+        bairro: celula.bairro ?? '',
+        pontoReferencia: celula.pontoReferencia ?? '',
+        coords: celula.coords,
+      });
 
       if (celula.itinerante) {
         const locais = celula.locaisItinerantes || celula.encontroAtual?.locais || [];
@@ -180,13 +191,7 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
           if (foundIdx >= 0) setLocalAtivoIndex(foundIdx);
         }
       } else {
-        setValue('dia', celula.dia ?? '');
-        setValue('horario', celula.horario ?? '');
-        setValue('endereco', celula.endereco ?? '');
-        setValue('bairro', celula.bairro ?? '');
-        setValue('pontoReferencia', celula.pontoReferencia ?? '');
         if (celula.coords) {
-          setValue('coords', celula.coords);
           setGeoFeedback(`📍 Pin cadastrado: ${celula.coords.lat.toFixed(4)}, ${celula.coords.lng.toFixed(4)}`);
         }
       }
@@ -194,7 +199,7 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
     };
 
     loadData();
-  }, [mode, celulaIdParam, currentUser, isAdmin, navigate, setValue]);
+  }, [mode, celulaIdParam, currentUser, isAdmin, navigate, reset]);
 
   // Geocodificação precisa de Endereço Fixo com formatação padrão Google Maps
   const handleAddressGeocode = async () => {
@@ -761,29 +766,57 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
             {/* Endereço Completo (Rua / Avenida e Número) */}
             <div className="space-y-3">
               <div>
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
                   <label className={LABEL_CLASS + ' mb-0'}>
                     Endereço Completo (Rua / Avenida e Número)
                   </label>
-                  <button
-                    type="button"
-                    onClick={handleAddressGeocode}
-                    disabled={isGeocoding}
-                    className="text-[11px] text-brand-400 hover:text-brand-300 font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    {isGeocoding ? (
-                      <><Loader2 className="w-3 h-3 animate-spin" /> Localizando...</>
-                    ) : (
-                      <><Sparkles className="w-3 h-3" /> Localizar Pin Exato no Mapa</>
+                  <div className="flex items-center gap-2">
+                    {watch('endereco') && (
+                      <button
+                        type="button"
+                        onClick={() => setFocus('endereco')}
+                        className="text-[11px] text-amber-300 hover:text-white bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all cursor-pointer border border-amber-500/30 active:scale-95"
+                        title="Editar endereço digitado"
+                      >
+                        <Edit3 className="w-3 h-3 text-amber-400" />
+                        <span>Editar</span>
+                      </button>
                     )}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={handleAddressGeocode}
+                      disabled={isGeocoding}
+                      className="text-[11px] text-brand-400 hover:text-brand-300 font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      {isGeocoding ? (
+                        <><Loader2 className="w-3 h-3 animate-spin" /> Localizando...</>
+                      ) : (
+                        <><Sparkles className="w-3 h-3" /> Localizar Pin Exato no Mapa</>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <input
-                  {...register('endereco')}
-                  className={FIELD_CLASS}
-                  placeholder="Ex: Rua 31 de Março, 240"
-                  onBlur={handleAddressGeocode}
-                />
+
+                <div className="relative">
+                  <input
+                    {...register('endereco')}
+                    className={FIELD_CLASS + (watch('endereco') ? ' pr-20' : '')}
+                    placeholder="Ex: Rua 31 de Março, 240"
+                    onBlur={handleAddressGeocode}
+                  />
+                  {watch('endereco') && (
+                    <button
+                      type="button"
+                      onClick={() => setFocus('endereco')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-amber-300 hover:text-white flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 transition-all cursor-pointer shadow-sm active:scale-95"
+                      title="Editar endereço"
+                    >
+                      <Edit3 className="w-3 h-3 text-amber-400" />
+                      <span>Editar</span>
+                    </button>
+                  )}
+                </div>
+
                 <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
                   🔒 <em>O endereço exato posiciona o pin no mapa, mas fica protegido no app público (o visitante vê apenas o bairro).</em>
                 </p>
