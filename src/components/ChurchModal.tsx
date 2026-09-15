@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Navigation, Calendar, MapPin, Compass, MessageCircle, Share2, Check } from 'lucide-react';
-import { IGREJA_ATOS_SEDE } from '../data/bairrosTimoteo';
+import { useIgrejaSede } from '../hooks/useIgrejaSede';
 import { AtosLogo } from './AtosLogo';
 
 interface ChurchModalProps {
@@ -10,21 +10,24 @@ interface ChurchModalProps {
 }
 
 export const ChurchModal: React.FC<ChurchModalProps> = ({ isOpen, onClose }) => {
+  const { igrejaSede } = useIgrejaSede();
   const [showNavOptions, setShowNavOptions] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
   if (!isOpen) return null;
 
-  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${IGREJA_ATOS_SEDE.coords.lat},${IGREJA_ATOS_SEDE.coords.lng}&destination_place_id=Igreja+Atos+Timoteo`;
-  const wazeUrl = `https://waze.com/ul?ll=${IGREJA_ATOS_SEDE.coords.lat},${IGREJA_ATOS_SEDE.coords.lng}&navigate=yes`;
-  const whatsAppUrl = `https://wa.me/5531998711000?text=${encodeURIComponent('Olá! Gostaria de informações sobre os cultos e atividades da Igreja Atos em Timóteo.')}`;
+  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${igrejaSede.coords.lat},${igrejaSede.coords.lng}&destination_place_id=Igreja+Atos+Timoteo`;
+  const wazeUrl = `https://waze.com/ul?ll=${igrejaSede.coords.lat},${igrejaSede.coords.lng}&navigate=yes`;
+  const cleanPhone = (igrejaSede.telefone || '31998711000').replace(/\D/g, '');
+  const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+  const whatsAppUrl = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent('Olá! Gostaria de informações sobre os cultos e atividades da Igreja Atos em Timóteo.')}`;
 
   const handleShare = async () => {
-    const text = `Venha conhecer a *Igreja Atos* em Timóteo!\n📍 ${IGREJA_ATOS_SEDE.enderecoCompleto}\n✨ Cultos: ${IGREJA_ATOS_SEDE.cultos}`;
+    const text = `Venha conhecer a *${igrejaSede.nome}* em Timóteo!\n📍 ${igrejaSede.enderecoCompleto}\n✨ Cultos: ${igrejaSede.cultos}`;
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Igreja Atos · Sede Timóteo',
+          title: `${igrejaSede.nome} · Timóteo`,
           text,
           url: window.location.href,
         });
@@ -112,7 +115,7 @@ export const ChurchModal: React.FC<ChurchModalProps> = ({ isOpen, onClose }) => 
                     Cultos de Celebração
                   </div>
                   <div className="text-xs font-extrabold text-slate-900 mt-0.5">
-                    {IGREJA_ATOS_SEDE.cultos}
+                    {igrejaSede.cultos}
                   </div>
                 </div>
               </div>
@@ -127,10 +130,10 @@ export const ChurchModal: React.FC<ChurchModalProps> = ({ isOpen, onClose }) => 
                     Endereço da Sede:
                   </strong>
                   <span className="text-slate-800 font-medium leading-relaxed">
-                    {IGREJA_ATOS_SEDE.enderecoCompleto}
+                    {igrejaSede.enderecoCompleto}
                   </span>
                   <span className="block text-[11px] text-slate-500 mt-0.5">
-                    Bairro {IGREJA_ATOS_SEDE.bairro} · CEP {IGREJA_ATOS_SEDE.cep}
+                    Bairro {igrejaSede.bairro} · CEP {igrejaSede.cep}
                   </span>
                 </div>
               </div>

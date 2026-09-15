@@ -6,13 +6,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllLideres, createLider, deleteLider } from '../services/authService';
 import { listenAllCelulasAdmin, toggleCelulaAtivo, deleteCelula, resetAndSeedOfficialCelulas } from '../services/celulaService';
-import type { LiderUser, Celula } from '../types/celula';
-import { getProfileStyle } from '../utils/geo';
+import { useIgrejaSede } from '../hooks/useIgrejaSede';
+import { fetchCepData, geocodeAddress, formatGoogleMapsAddress, getProfileStyle } from '../utils/geo';
+import { MiniMapPreview } from '../components/MiniMapPreview';
+import type { LiderUser, Celula, IgrejaSede } from '../types/celula';
 import {
   Users, Plus, Trash2, Power, PowerOff, Loader2, AlertCircle,
   ArrowLeft, Shield, MapPin, ChevronDown, ChevronUp, CheckCircle,
   Edit3, RefreshCw, Search, LogOut, Navigation, CheckCircle2,
-  Calendar, Phone, Mail, Compass, Sparkles,
+  Calendar, Phone, Mail, Compass, Sparkles, Save, Church,
 } from 'lucide-react';
 
 const newLiderSchema = z.object({
@@ -33,6 +35,21 @@ export default function AdminPanel() {
   const [showForm, setShowForm] = useState(false);
   const [submitMsg, setSubmitMsg] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Configuração da Igreja Sede
+  const { igrejaSede, updateSede } = useIgrejaSede();
+  const [showSedeForm, setShowSedeForm] = useState(false);
+  const [sedeData, setSedeData] = useState<IgrejaSede>(igrejaSede);
+  const [isGeocodingSede, setIsGeocodingSede] = useState(false);
+  const [isLoadingSedeCep, setIsLoadingSedeCep] = useState(false);
+  const [sedeFeedback, setSedeFeedback] = useState<string | null>(null);
+  const [sedeSaving, setSedeSaving] = useState(false);
+
+  useEffect(() => {
+    if (igrejaSede) {
+      setSedeData(igrejaSede);
+    }
+  }, [igrejaSede]);
 
   // Filtros de busca no painel
   const [cellSearch, setCellSearch] = useState('');
@@ -105,6 +122,76 @@ export default function AdminPanel() {
       alert('Erro ao resetar células: ' + err?.message);
     } finally {
       setResetting(false);
+    }
+  };
+
+  // Funções de Gerenciamento do Endereço da Sede da Igreja
+  const handleSedeCepBlur = async (cepVal: string) => {
+    const digits = cepVal.replace(/\D/g, '');
+    if (digits.length !== 8) return;
+    setIsLoadingSedeCep(true);
+    setSedeFeedback(null);
+    const data = await fetchCepData(digits);
+    if (data && !data.erro) {
+      const updated = {
+        ...sedeData,
+        cep: cepVal,
+        bairro: data.bairro || sedeData.bairro,
+        endereco: data.logradouro || sedeData.endereco,
+      };
+      const coords = await geocodeAddress(data.logradouro || updated.endereco, data.bairro || updated.bairro, digits);
+      if (coords) {
+        updated.coords = coords;
+        setSedeFeedback(`📍 Pin da igreja localizado: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+      }
+      setSedeData(updated);
+    }
+    setIsLoadingSedeCep(false);
+  };
+
+  const handleSedeGeocode = async () => {
+    if (!sedeData.endereco.trim() && !sedeData.bairro.trim()) return;
+    setIsGeocodingSede(true);
+    setSedeFeedback(null);
+
+    const formattedEnd = formatGoogleMapsAddress(sedeData.endereco);
+    const targetEnd = formattedEnd || sedeData.endereco;
+    const coords = await geocodeAddress(targetEnd, sedeData.bairro, sedeData.cep);
+
+    const updated = {
+      ...sedeData,
+      endereco: targetEnd,
+      enderecoCompleto: `${targetEnd} - ${sedeData.bairro}, Timóteo - MG (CEP ${sedeData.cep})`,
+      coords: coords || sedeData.coords,
+    };
+
+    if (coords) {
+      setSedeFeedback(`📍 Localização exata da sede encontrada: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+    } else {
+      setSedeFeedback('Não foi possível achar o número exato, mantendo posição atual.');
+    }
+    setSedeData(updated);
+    setIsGeocodingSede(false);
+  };
+
+  const handleSaveSede = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSedeSaving(true);
+    try {
+      const formattedEnd = formatGoogleMapsAddress(sedeData.endereco);
+      const full = `${formattedEnd || sedeData.endereco} - ${sedeData.bairro}, Timóteo - MG (CEP ${sedeData.cep})`;
+      const toSave: IgrejaSede = {
+        ...sedeData,
+        endereco: formattedEnd || sedeData.endereco,
+        enderecoCompleto: full,
+      };
+      await updateSede(toSave);
+      setSubmitMsg('✅ Dados e endereço exato da Sede da Igreja Atos atualizados com sucesso!');
+      setShowSedeForm(false);
+    } catch (err: any) {
+      alert('Erro ao salvar sede: ' + err?.message);
+    } finally {
+      setSedeSaving(false);
     }
   };
 
@@ -275,11 +362,206 @@ export default function AdminPanel() {
               </div>
             </div>
 
-            {/* Split Screen Layout on Desktop: Left Column (Líderes) / Right Column (Células) */}
+            {/* Split Screen Layout on Desktop: Left Column (Líderes e Sede) / Right Column (Células) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-              {/* ===== COLUNA 1: LÍDERES AUTORIZADOS (4 colunas no Desktop) ===== */}
-              <section className="lg:col-span-4 bg-white/5 border border-white/10 rounded-3xl p-5 space-y-4">
+              {/* ===== COLUNA 1: SEDE DA IGREJA & LÍDERES (4 colunas no Desktop) ===== */}
+              <div className="lg:col-span-4 space-y-6">
+
+                {/* ===== CARD DA SEDE DA IGREJA ATOS ===== */}
+                <section className="p-5 rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-slate-900/60 border border-amber-500/30 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-sm">
+                        <Church className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h2 className="text-sm font-extrabold text-white flex items-center gap-1.5">
+                          {sedeData.nome}
+                          <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase">
+                            Sede
+                          </span>
+                        </h2>
+                        <div className="text-[11px] text-slate-400">
+                          Bairro {sedeData.bairro || 'João XXIII'} · Timóteo
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowSedeForm(!showSedeForm)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-sm cursor-pointer"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      {showSedeForm ? 'Fechar' : 'Editar Endereço'}
+                      {showSedeForm ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    </button>
+                  </div>
+
+                  {/* Resumo do Endereço Atual */}
+                  {!showSedeForm && (
+                    <div className="space-y-2 text-xs bg-slate-950/70 p-3.5 rounded-2xl border border-white/5">
+                      <div className="flex items-start gap-2 text-slate-300">
+                        <MapPin className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <div className="text-white font-bold">{sedeData.endereco || 'Rua 95, nº 6F'}</div>
+                          <div className="text-[11px] text-slate-400">
+                            Bairro {sedeData.bairro} · CEP {sedeData.cep}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-slate-400 flex items-center gap-1 pt-1 border-t border-white/5">
+                        <span>📍 Pin no Mapa:</span>
+                        <strong className="text-emerald-400 font-mono">
+                          {sedeData.coords?.lat?.toFixed(4)}, {sedeData.coords?.lng?.toFixed(4)}
+                        </strong>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Formulário de Edição Completa da Sede da Igreja */}
+                  {showSedeForm && (
+                    <form onSubmit={handleSaveSede} className="p-4 rounded-2xl bg-slate-950/90 border border-amber-500/40 space-y-3.5 animate-fadeIn">
+                      <div className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Cadastrar Endereço Exato da Igreja
+                      </div>
+
+                      <div>
+                        <label className={LABEL_CLASS}>Nome da Igreja / Sede</label>
+                        <input
+                          type="text"
+                          value={sedeData.nome}
+                          onChange={(e) => setSedeData({ ...sedeData, nome: e.target.value })}
+                          className={FIELD_CLASS}
+                          placeholder="Ex: Igreja Atos · Sede"
+                          required
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className={LABEL_CLASS}>CEP (Timóteo)</label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={sedeData.cep}
+                              onChange={(e) => setSedeData({ ...sedeData, cep: e.target.value })}
+                              onBlur={(e) => handleSedeCepBlur(e.target.value)}
+                              className={FIELD_CLASS + ' pr-10'}
+                              placeholder="35180-368"
+                              maxLength={9}
+                              required
+                            />
+                            {isLoadingSedeCep && (
+                              <Loader2 className="absolute right-3 top-3.5 w-4 h-4 animate-spin text-amber-400" />
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className={LABEL_CLASS}>Bairro</label>
+                          <input
+                            type="text"
+                            value={sedeData.bairro}
+                            onChange={(e) => setSedeData({ ...sedeData, bairro: e.target.value })}
+                            className={FIELD_CLASS}
+                            placeholder="Ex: João XXIII"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {/* Endereço Completo e Botão Localizar Pin */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className={LABEL_CLASS + ' mb-0'}>
+                            Endereço Completo (Rua e Número)
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleSedeGeocode}
+                            disabled={isGeocodingSede}
+                            className="text-[11px] text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            {isGeocodingSede ? (
+                              <><Loader2 className="w-3 h-3 animate-spin" /> Localizando...</>
+                            ) : (
+                              <><Sparkles className="w-3 h-3" /> Localizar Pin Exato</>
+                            )}
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={sedeData.endereco}
+                          onChange={(e) => setSedeData({ ...sedeData, endereco: e.target.value })}
+                          onBlur={handleSedeGeocode}
+                          className={FIELD_CLASS}
+                          placeholder="Ex: Rua 95, 6F"
+                          required
+                        />
+                      </div>
+
+                      {sedeFeedback && (
+                        <p className="text-[11px] text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-xl flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                          {sedeFeedback}
+                        </p>
+                      )}
+
+                      {/* Mini Mapa Interativo com Pin da Sede */}
+                      {sedeData.coords && (
+                        <MiniMapPreview
+                          coords={sedeData.coords}
+                          title={sedeData.nome}
+                          onCoordsChange={(newCoords) => {
+                            setSedeData({ ...sedeData, coords: newCoords });
+                            setSedeFeedback(`📍 Pin da igreja ajustado: ${newCoords.lat.toFixed(4)}, ${newCoords.lng.toFixed(4)}`);
+                          }}
+                        />
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className={LABEL_CLASS}>Cultos de Celebração</label>
+                          <input
+                            type="text"
+                            value={sedeData.cultos}
+                            onChange={(e) => setSedeData({ ...sedeData, cultos: e.target.value })}
+                            className={FIELD_CLASS}
+                            placeholder="Ex: Domingo às 10h e 18h · Quarta às 19h30"
+                          />
+                        </div>
+                        <div>
+                          <label className={LABEL_CLASS}>WhatsApp da Secretaria</label>
+                          <input
+                            type="text"
+                            value={sedeData.telefone}
+                            onChange={(e) => setSedeData({ ...sedeData, telefone: e.target.value })}
+                            className={FIELD_CLASS}
+                            placeholder="31998711000"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={sedeSaving}
+                        className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 active:scale-[0.98] transition-all cursor-pointer"
+                      >
+                        {sedeSaving ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Salvando Sede...</>
+                        ) : (
+                          <><Save className="w-4 h-4" /> Salvar Endereço da Igreja</>
+                        )}
+                      </button>
+                    </form>
+                  )}
+                </section>
+
+                {/* ===== CARD DE LÍDERES AUTORIZADOS ===== */}
+                <section className="bg-white/5 border border-white/10 rounded-3xl p-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-extrabold text-white flex items-center gap-2">
                     <Users className="w-4 h-4 text-brand-400" />
@@ -430,8 +712,9 @@ export default function AdminPanel() {
                   )}
                 </div>
               </section>
+            </div>
 
-              {/* ===== COLUNA 2: TODAS AS CÉLULAS (8 colunas no Desktop) ===== */}
+            {/* ===== COLUNA 2: TODAS AS CÉLULAS (8 colunas no Desktop) ===== */}
               <section className="lg:col-span-8 bg-white/5 border border-white/10 rounded-3xl p-5 lg:p-6 space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>

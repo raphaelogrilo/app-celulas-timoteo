@@ -107,3 +107,16 @@ export interface LiderUser {
   celulaId?: string;
   criadoEm?: string;
 }
+
+export interface IgrejaSede {
+  nome: string;
+  endereco: string;
+  enderecoCompleto: string;
+  bairro: string;
+  cep: string;
+  cidade: string;
+  coords: Coords;
+  cultos: string;
+  telefone: string;
+}
+

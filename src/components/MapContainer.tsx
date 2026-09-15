@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { MapContainer as LeafletMap, TileLayer, Marker, useMap, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import type { Celula, Coords, UserLocation } from '../types/celula';
-import { TIMOTEO_CENTER, IGREJA_ATOS_SEDE } from '../data/bairrosTimoteo';
+import { TIMOTEO_CENTER } from '../data/bairrosTimoteo';
+import { useIgrejaSede } from '../hooks/useIgrejaSede';
 import { getProfileStyle } from '../utils/geo';
 import { Locate, RotateCcw, List, Map as MapIcon, Loader2 } from 'lucide-react';
 
@@ -174,6 +175,7 @@ export const MapContainer: React.FC<MapViewProps> = ({
   targetCoords,
 }) => {
   const mapRef = useRef<L.Map | null>(null);
+  const { igrejaSede } = useIgrejaSede();
 
   const handleRecenter = () => {
     if (mapRef.current) {
@@ -210,13 +212,15 @@ export const MapContainer: React.FC<MapViewProps> = ({
         />
 
         {/* MARCADOR FIXO AMARELO DA SEDE DA IGREJA ATOS */}
-        <Marker
-          position={[IGREJA_ATOS_SEDE.coords.lat, IGREJA_ATOS_SEDE.coords.lng]}
-          icon={createIgrejaSedePinIcon()}
-          eventHandlers={{
-            click: () => onOpenChurch && onOpenChurch(),
-          }}
-        />
+        {igrejaSede?.coords && (
+          <Marker
+            position={[igrejaSede.coords.lat, igrejaSede.coords.lng]}
+            icon={createIgrejaSedePinIcon()}
+            eventHandlers={{
+              click: () => onOpenChurch && onOpenChurch(),
+            }}
+          />
+        )}
 
         {/* Marcadores das Células */}
         {celulas.map((celula) => {
