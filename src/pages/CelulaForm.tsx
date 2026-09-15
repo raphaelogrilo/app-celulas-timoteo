@@ -13,10 +13,11 @@ import {
 import { vincularLiderCelula, getAllLideres } from '../services/authService';
 import { fetchCepData } from '../utils/geo';
 import { BAIRROS_TIMOTEO } from '../data/bairrosTimoteo';
-import type { LiderUser } from '../types/celula';
+import type { LiderUser, LocalItinerante } from '../types/celula';
 import {
   ArrowLeft, Loader2, Save, AlertCircle, MapPin,
-  Users, Calendar, Clock, Phone, FileText, Info, Shield, Mail,
+  Users, Calendar, Clock, Phone, FileText, Shield, Mail,
+  Trash2, Plus, CheckCircle2,
 } from 'lucide-react';
 
 const PERFIS = ['Jovens', 'Casais', 'Família', 'Homens', 'Mulheres', 'Teens', 'Misto'] as const;
@@ -74,6 +75,21 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
   const [originalCelula, setOriginalCelula] = useState<any>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [lideresList, setLideresList] = useState<LiderUser[]>([]);
+
+  // Estado para múltiplos endereços da rota itinerante
+  const [locaisItinerantes, setLocaisItinerantes] = useState<LocalItinerante[]>([]);
+  const [localAtivoIndex, setLocalAtivoIndex] = useState<number>(0);
+  const [novoLocal, setNovoLocal] = useState({
+    identificador: '',
+    cep: '',
+    bairro: '',
+    dia: 'Quarta-feira',
+    horario: '19:30',
+    observacao: '',
+    coords: { lat: -19.5828, lng: -42.5937 },
+  });
+  const [novoCepLoading, setNovoCepLoading] = useState(false);
+  const [novoCepFeedback, setNovoCepFeedback] = useState<string | null>(null);
 
   const {
     register, handleSubmit, watch, setValue,
@@ -133,7 +149,15 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
       setValue('faixaEtaria', celula.faixaEtaria ?? '');
       setValue('itinerante', celula.itinerante);
       setValue('ativo', celula.ativo);
-      if (!celula.itinerante) {
+
+      if (celula.itinerante) {
+        const locais = celula.locaisItinerantes || celula.encontroAtual?.locais || [];
+        setLocaisItinerantes(locais);
+        if (celula.encontroAtual?.localAtivoId) {
+          const foundIdx = locais.findIndex(l => l.id === celula.encontroAtual?.localAtivoId);
+          if (foundIdx >= 0) setLocalAtivoIndex(foundIdx);
+        }
+      } else {
         setValue('dia', celula.dia ?? '');
         setValue('horario', celula.horario ?? '');
         setValue('cep', celula.cep ?? '');
@@ -148,7 +172,7 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
     loadData();
   }, [mode, celulaIdParam, currentUser, isAdmin, navigate, setValue]);
 
-  // Busca de CEP automática
+  // Busca de CEP automática para Endereço Fixo
   const handleCepBlur = async (cepValue: string) => {
     const digits = cepValue.replace(/\D/g, '');
     if (digits.length !== 8) return;
@@ -157,7 +181,6 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
 
     const data = await fetchCepData(digits);
     if (data && !data.erro) {
-      if (data.logradouro) setValue('endereco', data.logradouro);
       if (data.bairro) {
         setValue('bairro', data.bairro);
         const found = BAIRROS_TIMOTEO.find(
@@ -176,6 +199,65 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
     setIsLoadingCep(false);
   };
 
+  // Busca de CEP para Novo Local Itinerante
+  const handleNovoLocalCepBlur = async (cepValue: string) => {
+    const digits = cepValue.replace(/\D/g, '');
+    if (digits.length !== 8) return;
+    setNovoCepLoading(true);
+    setNovoCepFeedback(null);
+
+    const data = await fetchCepData(digits);
+    if (data && !data.erro) {
+      const bairro = data.bairro || '';
+      const found = BAIRROS_TIMOTEO.find(
+        b => b.nome.toLowerCase() === bairro.toLowerCase()
+      );
+      setNovoLocal(prev => ({
+        ...prev,
+        bairro: bairro || prev.bairro,
+        coords: found ? found.coords : prev.coords,
+      }));
+      setNovoCepFeedback(found ? `✓ Localizado: ${bairro}` : `Bairro "${bairro}" localizado.`);
+    } else {
+      setNovoCepFeedback('CEP não encontrado');
+    }
+    setNovoCepLoading(false);
+  };
+
+  const handleAdicionarNovoLocal = () => {
+    if (!novoLocal.identificador.trim()) {
+      alert('Informe um nome/identificador para este local (Ex: Casa do Marcos).');
+      return;
+    }
+    if (!novoLocal.bairro.trim()) {
+      alert('Informe o bairro deste local em Timóteo.');
+      return;
+    }
+
+    const item: LocalItinerante = {
+      id: 'loc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      identificador: novoLocal.identificador.trim(),
+      cep: novoLocal.cep.trim(),
+      bairro: novoLocal.bairro.trim(),
+      dia: novoLocal.dia,
+      horario: novoLocal.horario,
+      observacao: novoLocal.observacao.trim() || undefined,
+      coords: novoLocal.coords,
+    };
+
+    setLocaisItinerantes(prev => [...prev, item]);
+    setNovoLocal({
+      identificador: '',
+      cep: '',
+      bairro: '',
+      dia: 'Quarta-feira',
+      horario: '19:30',
+      observacao: '',
+      coords: { lat: -19.5828, lng: -42.5937 },
+    });
+    setNovoCepFeedback(null);
+  };
+
   const onSubmit = async (data: FormData) => {
     if (!currentUser) return;
     setSubmitError(null);
@@ -184,11 +266,38 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
         ...data,
         itinerante: data.itinerante,
         ativo: data.ativo ?? true,
-        ...(data.itinerante ? {
-          dia: undefined, horario: undefined, cep: undefined,
-          endereco: undefined, bairro: undefined, pontoReferencia: undefined, coords: undefined,
-        } : {}),
       };
+
+      if (data.itinerante) {
+        payload.dia = undefined;
+        payload.horario = undefined;
+        payload.cep = undefined;
+        payload.endereco = undefined;
+        payload.bairro = undefined;
+        payload.pontoReferencia = undefined;
+        payload.coords = undefined;
+        payload.locaisItinerantes = locaisItinerantes;
+
+        const activeLoc = locaisItinerantes[localAtivoIndex] || locaisItinerantes[0];
+        if (activeLoc) {
+          payload.encontroAtual = {
+            dia: activeLoc.dia || 'Quarta-feira',
+            horario: activeLoc.horario || '19:30',
+            cep: activeLoc.cep,
+            bairro: activeLoc.bairro,
+            coords: activeLoc.coords,
+            dataReferencia: originalCelula?.encontroAtual?.dataReferencia || new Date().toISOString().split('T')[0],
+            observacao: activeLoc.observacao || '',
+            localAtivoId: activeLoc.id,
+            locais: locaisItinerantes,
+          };
+        } else if (originalCelula?.encontroAtual) {
+          payload.encontroAtual = {
+            ...originalCelula.encontroAtual,
+            locais: locaisItinerantes,
+          };
+        }
+      }
 
       // Determina o e-mail e UID do líder responsável
       const targetLeaderEmail = isAdmin && data.liderEmail?.trim()
@@ -211,9 +320,6 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
       let celulaId = existingId;
 
       if (existingId) {
-        if (originalCelula?.encontroAtual && data.itinerante) {
-          payload.encontroAtual = originalCelula.encontroAtual;
-        }
         await updateCelula(existingId, payload);
       } else {
         celulaId = await createCelula(payload);
@@ -381,7 +487,7 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
           <label className="flex items-center justify-between cursor-pointer">
             <div>
               <div className="text-sm font-bold text-white">Célula Itinerante</div>
-              <div className="text-[11px] text-slate-400 mt-0.5">O endereço muda a cada semana</div>
+              <div className="text-[11px] text-slate-400 mt-0.5">O endereço muda e reveza entre vários locais</div>
             </div>
             <input type="checkbox" {...register('itinerante')} className="sr-only" />
             <div
@@ -391,13 +497,177 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
               <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${isItinerante ? 'translate-x-6' : 'translate-x-0'}`} />
             </div>
           </label>
-          {isItinerante && (
-            <div className="mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-400 flex items-start gap-2">
-              <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              Para célula itinerante, você atualizará o endereço e dia semanalmente no painel após o cadastro.
-            </div>
-          )}
         </div>
+
+        {/* Painel de Múltiplos Endereços (somente quando ITINERANTE = TRUE) */}
+        {isItinerante && (
+          <div className="space-y-4 p-4 md:p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-amber-400">
+                <MapPin className="w-4 h-4" />
+                <h3 className="text-xs font-bold uppercase tracking-wider">
+                  Painel de Endereços da Rota Itinerante
+                </h3>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">
+                {locaisItinerantes.length} {locaisItinerantes.length === 1 ? 'local cadastrado' : 'locais cadastrados'}
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Cadastre as casas e locais onde a célula se reúne alternadamente. Você poderá alternar o endereço ativo facilmente a cada semana.
+            </p>
+
+            {/* Lista de Locais Cadastrados */}
+            {locaisItinerantes.length > 0 && (
+              <div className="space-y-2.5">
+                {locaisItinerantes.map((loc, idx) => (
+                  <div
+                    key={loc.id || idx}
+                    className={`p-3.5 rounded-2xl border transition-all ${
+                      localAtivoIndex === idx
+                        ? 'bg-amber-500/15 border-amber-500/50 shadow-lg shadow-amber-500/10'
+                        : 'bg-slate-900/60 border-white/10'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-bold text-white">{loc.identificador}</span>
+                          {localAtivoIndex === idx ? (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[9px] uppercase tracking-wider flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> Ativo Desta Semana
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setLocalAtivoIndex(idx)}
+                              className="text-[10px] text-amber-400 hover:text-amber-300 font-bold underline cursor-pointer"
+                            >
+                              Definir como Ativo Desta Semana
+                            </button>
+                          )}
+                        </div>
+                        <div className="text-xs text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <span>📍 Bairro: <strong className="text-white">{loc.bairro}</strong></span>
+                          {loc.cep && <span>CEP: {loc.cep}</span>}
+                          {loc.dia && <span>🗓️ {loc.dia} {loc.horario ? `às ${loc.horario}` : ''}</span>}
+                        </div>
+                        {loc.observacao && (
+                          <p className="text-[11px] text-slate-400 italic">Obs: {loc.observacao}</p>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const filtered = locaisItinerantes.filter((_, i) => i !== idx);
+                          setLocaisItinerantes(filtered);
+                          if (localAtivoIndex >= filtered.length) {
+                            setLocalAtivoIndex(Math.max(0, filtered.length - 1));
+                          }
+                        }}
+                        className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer"
+                        title="Remover este local"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Formulário para Adicionar Novo Local */}
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-white/10 space-y-3">
+              <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                <Plus className="w-3.5 h-3.5 text-amber-400" />
+                Adicionar Novo Endereço / Casa da Rota
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className={LABEL_CLASS}>Identificador / Anfitrião</label>
+                  <input
+                    type="text"
+                    value={novoLocal.identificador}
+                    onChange={(e) => setNovoLocal({ ...novoLocal, identificador: e.target.value })}
+                    placeholder="Ex: Casa do Marcos, Família Silva..."
+                    className={FIELD_CLASS}
+                  />
+                </div>
+
+                <div>
+                  <label className={LABEL_CLASS}>CEP (Timóteo)</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={novoLocal.cep}
+                      onChange={(e) => setNovoLocal({ ...novoLocal, cep: e.target.value })}
+                      onBlur={(e) => handleNovoLocalCepBlur(e.target.value)}
+                      placeholder="35180-000"
+                      maxLength={9}
+                      className={FIELD_CLASS + ' pr-10'}
+                    />
+                    {novoCepLoading && <Loader2 className="absolute right-3 top-3.5 w-4 h-4 animate-spin text-amber-400" />}
+                  </div>
+                  {novoCepFeedback && <p className="text-[11px] text-amber-400 mt-1">{novoCepFeedback}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className={LABEL_CLASS}>Bairro</label>
+                  <input
+                    type="text"
+                    value={novoLocal.bairro}
+                    onChange={(e) => setNovoLocal({ ...novoLocal, bairro: e.target.value })}
+                    placeholder="Ex: Funcionários"
+                    className={FIELD_CLASS}
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_CLASS}>Dia</label>
+                  <select
+                    value={novoLocal.dia}
+                    onChange={(e) => setNovoLocal({ ...novoLocal, dia: e.target.value })}
+                    className={FIELD_CLASS + ' appearance-none'}
+                  >
+                    {DIAS.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={LABEL_CLASS}>Horário</label>
+                  <input
+                    type="time"
+                    value={novoLocal.horario}
+                    onChange={(e) => setNovoLocal({ ...novoLocal, horario: e.target.value })}
+                    className={FIELD_CLASS}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={LABEL_CLASS}>Observação (opcional)</label>
+                <input
+                  type="text"
+                  value={novoLocal.observacao}
+                  onChange={(e) => setNovoLocal({ ...novoLocal, observacao: e.target.value })}
+                  placeholder="Ex: Levar bíblia e lanche comunitário..."
+                  className={FIELD_CLASS}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAdicionarNovoLocal}
+                className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Adicionar Este Endereço à Lista
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Campos de Endereço (somente para célula FIXA) */}
         {!isItinerante && (

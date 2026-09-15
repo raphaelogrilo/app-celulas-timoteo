@@ -23,6 +23,17 @@ export interface Coords {
   lng: number;
 }
 
+export interface LocalItinerante {
+  id: string;
+  identificador: string; // Ex: "Casa do Marcos", "Família Silva", "Espaço 1"
+  bairro: string;
+  cep: string;
+  coords: Coords;
+  dia?: string;
+  horario?: string;
+  observacao?: string;
+}
+
 export interface EncontroAtual {
   dia: DiaSemana | string;
   horario: string;
@@ -33,6 +44,8 @@ export interface EncontroAtual {
   coords: Coords;
   dataReferencia: string; // ISO date "YYYY-MM-DD" do encontro
   observacao?: string;
+  localAtivoId?: string;
+  locais?: LocalItinerante[];
 }
 
 export interface Celula {
@@ -59,8 +72,9 @@ export interface Celula {
   coords?: Coords;
 
   // Dados para CÉLULA ITINERANTE (itinerante: true)
-  // O líder atualiza "encontroAtual" toda semana
+  // O líder pode cadastrar múltiplos endereços da rota e definir o encontro atual
   encontroAtual?: EncontroAtual;
+  locaisItinerantes?: LocalItinerante[];
 
   // Metadados
   liderUid?: string;       // UID do usuário Firebase do líder

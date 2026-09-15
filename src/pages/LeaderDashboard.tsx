@@ -1,35 +1,63 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getCelulaByLiderEmailOrUid } from '../services/celulaService';
+import {
+  listenCelulasLider,
+  toggleCelulaAtivo,
+} from '../services/celulaService';
 import type { Celula } from '../types/celula';
 import { getProfileStyle } from '../utils/geo';
 import {
-  LogOut, MapPin, Calendar, Clock, Phone, Edit3,
-  RefreshCw, PlusCircle, AlertTriangle, Compass, CheckCircle2,
-  ChevronRight, Users, Navigation, Shield,
+  LogOut, MapPin, Calendar, Phone, Edit3,
+  RefreshCw, PlusCircle, Compass,
+  Users, Navigation, Search, Power,
 } from 'lucide-react';
 
 export default function LeaderDashboard() {
   const { currentUser, liderData, logout } = useAuth();
-  const [celula, setCelula] = useState<Celula | null>(null);
+  const [celulas, setCelulas] = useState<Celula[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!currentUser?.email && !currentUser?.id) return;
     const identifier = currentUser.email || currentUser.id;
-    getCelulaByLiderEmailOrUid(identifier).then((c) => {
-      setCelula(c);
+
+    // Escuta em tempo real todas as células deste líder
+    const unsub = listenCelulasLider(identifier, (data) => {
+      setCelulas(data);
       setLoading(false);
     });
+
+    return () => unsub();
   }, [currentUser]);
 
-  const style = celula ? getProfileStyle(celula.perfil) : null;
+  const handleToggleStatus = async (c: Celula) => {
+    try {
+      setTogglingId(c.id);
+      await toggleCelulaAtivo(c.id, !c.ativo);
+      setCelulas(prev => prev.map(item => item.id === c.id ? { ...item, ativo: !item.ativo } : item));
+    } catch (err) {
+      alert('Erro ao alterar status da célula.');
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
-  const dia = celula?.itinerante ? celula.encontroAtual?.dia : celula?.dia;
-  const horario = celula?.itinerante ? celula.encontroAtual?.horario : celula?.horario;
-  const endereco = celula?.itinerante ? celula.encontroAtual?.endereco : celula?.endereco;
-  const bairro = celula?.itinerante ? celula.encontroAtual?.bairro : celula?.bairro;
+  const filteredCelulas = useMemo(() => {
+    if (!searchTerm.trim()) return celulas;
+    const s = searchTerm.toLowerCase();
+    return celulas.filter(c =>
+      c.nome.toLowerCase().includes(s) ||
+      c.perfil.toLowerCase().includes(s) ||
+      (c.bairro && c.bairro.toLowerCase().includes(s))
+    );
+  }, [celulas, searchTerm]);
+
+  const totalCelulas = celulas.length;
+  const ativasCount = celulas.filter(c => c.ativo).length;
+  const itinerantesCount = celulas.filter(c => c.itinerante).length;
 
   return (
     <div className="min-h-dvh bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
@@ -85,219 +113,186 @@ export default function LeaderDashboard() {
 
       <main className="max-w-6xl mx-auto px-4 lg:px-8 py-6 lg:py-8 space-y-6">
 
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+        {/* Estatísticas e Ações Rápidas do Topo */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Minhas Células</div>
+            <div className="text-2xl lg:text-3xl font-black text-white mt-1">{totalCelulas}</div>
           </div>
-        ) : !celula ? (
-
-          /* Sem célula cadastrada */
-          <div className="text-center py-16">
-            <div className="w-16 h-16 rounded-3xl bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto mb-4">
-              <PlusCircle className="w-8 h-8 text-brand-400" />
-            </div>
-            <h2 className="text-lg font-bold text-white mb-1">Nenhuma célula cadastrada</h2>
-            <p className="text-xs text-slate-400 mb-6 max-w-xs mx-auto">
-              Cadastre sua célula para que os visitantes possam encontrar você no mapa de Timóteo.
-            </p>
+          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+            <div className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Células Ativas</div>
+            <div className="text-2xl lg:text-3xl font-black text-emerald-400 mt-1">{ativasCount}</div>
+          </div>
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+            <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Itinerantes</div>
+            <div className="text-2xl lg:text-3xl font-black text-amber-400 mt-1">{itinerantesCount}</div>
+          </div>
+          <div className="flex items-center">
             <Link
               to="/lider/cadastro"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm shadow-lg shadow-brand-500/25 transition-all active:scale-95"
+              className="w-full h-full min-h-[72px] flex items-center justify-center gap-2 p-4 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-lg shadow-brand-500/20 transition-all active:scale-95 cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
-              Cadastrar Minha Célula
+              <span>Nova Célula</span>
             </Link>
           </div>
+        </div>
 
-        ) : (
-
-          /* Célula encontrada */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Coluna Esquerda: Status e Card da Célula (7 cols no desktop) */}
-            <div className="lg:col-span-7 space-y-4">
-              {/* Badge de Status */}
-              <div className={`flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border text-xs font-bold ${celula.ativo ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
-                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                <span>{celula.ativo ? 'Célula ativa e visível no mapa' : 'Célula inativa — não aparece no mapa'}</span>
-                {celula.itinerante && (
-                  <span className="ml-auto px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px]">
-                    🚶 Itinerante
-                  </span>
-                )}
-              </div>
-
-              {/* Card da Célula */}
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-5 md:p-6 space-y-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    {style && (
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${style.badgeBg} ${style.badgeText} mb-2 inline-block`}>
-                        {celula.perfil}
-                      </span>
-                    )}
-                    <h2 className="text-xl md:text-2xl font-black text-white">{celula.nome}</h2>
-                    {celula.faixaEtaria && (
-                      <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                        <Users className="w-3.5 h-3.5" /> {celula.faixaEtaria}
-                      </p>
-                    )}
-                  </div>
-                  <Link
-                    to="/lider/editar"
-                    className="w-10 h-10 rounded-2xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-colors"
-                    title="Editar célula"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </Link>
-                </div>
-
-                {/* Encontro */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-slate-800/60 rounded-2xl p-3.5 flex items-center gap-3">
-                    <Calendar className="w-4 h-4 text-brand-400 flex-shrink-0" />
-                    <div>
-                      <div className="text-[10px] text-slate-500 font-bold uppercase">Dia</div>
-                      <div className="text-sm font-bold text-white">{dia || '—'}</div>
-                    </div>
-                  </div>
-                  <div className="bg-slate-800/60 rounded-2xl p-3.5 flex items-center gap-3">
-                    <Clock className="w-4 h-4 text-brand-400 flex-shrink-0" />
-                    <div>
-                      <div className="text-[10px] text-slate-500 font-bold uppercase">Horário</div>
-                      <div className="text-sm font-bold text-white">{horario || '—'}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Endereço */}
-                <div className="bg-slate-800/60 rounded-2xl p-3.5 flex items-start gap-3">
-                  <MapPin className="w-4 h-4 text-brand-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <div className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Endereço</div>
-                    <div className="text-sm font-medium text-white">
-                      {endereco || '—'}
-                    </div>
-                    <div className="text-xs text-slate-400 mt-0.5">
-                      Bairro {bairro} {celula.itinerante && celula.encontroAtual?.dataReferencia && (
-                        <span className="ml-1 text-amber-400">
-                          · Semana de {new Date(celula.encontroAtual.dataReferencia + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Telefone */}
-                <div className="bg-slate-800/60 rounded-2xl p-3.5 flex items-center gap-3">
-                  <Phone className="w-4 h-4 text-brand-400 flex-shrink-0" />
-                  <div>
-                    <div className="text-[10px] text-slate-500 font-bold uppercase">Contato</div>
-                    <div className="text-sm font-bold text-white">{celula.telefone}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Coluna Direita: Ações Rápidas (5 cols no desktop) */}
-            <div className="lg:col-span-5 space-y-4">
-              <div className="space-y-2.5">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 px-1">Ações Rápidas</h3>
-
-                <Link
-                  to="/lider/editar"
-                  className="flex items-center justify-between w-full p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all active:scale-[0.98]"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-500/20 text-brand-400 flex items-center justify-center">
-                      <Edit3 className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-white">Editar Dados da Célula</div>
-                      <div className="text-[11px] text-slate-400">Nome, perfil, contato, descrição...</div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-500" />
-                </Link>
-
-                {celula.itinerante && (
-                  <Link
-                    to="/lider/itinerante"
-                    className="flex items-center justify-between w-full p-4 rounded-2xl bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/25 transition-all active:scale-[0.98]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
-                        <RefreshCw className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-amber-300">Atualizar Endereço da Semana</div>
-                        <div className="text-[11px] text-amber-400/70">Informe onde será o encontro desta semana</div>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-amber-500" />
-                  </Link>
-                )}
-
-                <a
-                  href="/"
-                  className="flex items-center justify-between w-full p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all active:scale-[0.98]"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-500/20 text-slate-400 flex items-center justify-center">
-                      <Navigation className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-white">Ver Mapa Público</div>
-                      <div className="text-[11px] text-slate-400">Como os visitantes veem sua célula</div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-500" />
-                </a>
-
-                {/* Aviso itinerante sem encontroAtual */}
-                {celula.itinerante && !celula.encontroAtual && (
-                  <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
-                    <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-sm font-bold text-amber-300">Endereço da semana não definido</div>
-                      <p className="text-[11px] text-amber-400/70 mt-0.5">
-                        Sua célula é itinerante mas sem o endereço desta semana preenchido, ela não aparecerá no mapa. Atualize agora.
-                      </p>
-                      <Link
-                        to="/lider/itinerante"
-                        className="inline-block mt-2 text-xs font-bold text-amber-300 underline underline-offset-2"
-                      >
-                        Definir agora →
-                      </Link>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Link Admin */}
-              {liderData?.isAdmin && (
-                <div className="pt-2">
-                  <Link
-                    to="/admin"
-                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700 transition-all shadow-md"
-                  >
-                    <Shield className="w-4 h-4 text-brand-400" />
-                    Acessar Painel Geral Admin
-                  </Link>
-                </div>
-              )}
-            </div>
+        {/* Barra de Busca de Células */}
+        {totalCelulas > 1 && (
+          <div className="relative">
+            <Search className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar entre minhas células por nome, perfil ou bairro..."
+              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-slate-900/80 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
+            />
           </div>
         )}
 
-        {/* Link Admin */}
-        {liderData?.isAdmin && (
-          <div className="pt-2">
-            <Link
-              to="/admin"
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700 transition-all"
-            >
-              Acessar Painel Admin
-            </Link>
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filteredCelulas.length === 0 ? (
+          /* Sem células */
+          <div className="text-center py-16 px-4 bg-white/5 border border-white/10 rounded-3xl">
+            <div className="w-16 h-16 rounded-3xl bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto mb-4">
+              <PlusCircle className="w-8 h-8 text-brand-400" />
+            </div>
+            <h2 className="text-lg font-bold text-white mb-1">
+              {searchTerm ? 'Nenhuma célula encontrada para a busca' : 'Nenhuma célula cadastrada sob sua liderança'}
+            </h2>
+            <p className="text-xs text-slate-400 mb-6 max-w-sm mx-auto">
+              {searchTerm
+                ? 'Tente buscar com outro termo ou limpe o campo de busca.'
+                : 'Cadastre sua primeira célula para que os visitantes e membros de Timóteo possam localizá-la.'}
+            </p>
+            {!searchTerm && (
+              <Link
+                to="/lider/cadastro"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm shadow-xl shadow-brand-500/25 transition-all active:scale-95"
+              >
+                <PlusCircle className="w-4 h-4" />
+                Cadastrar Célula
+              </Link>
+            )}
+          </div>
+        ) : (
+          /* Lista de Células do Líder */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Gerenciar Células Cadastradas ({filteredCelulas.length})
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredCelulas.map((c) => {
+                const style = getProfileStyle(c.perfil);
+                const dia = c.itinerante ? c.encontroAtual?.dia : c.dia;
+                const horario = c.itinerante ? c.encontroAtual?.horario : c.horario;
+                const bairro = c.itinerante ? c.encontroAtual?.bairro : c.bairro;
+                const totalLocais = c.locaisItinerantes?.length || c.encontroAtual?.locais?.length || 0;
+
+                return (
+                  <div
+                    key={c.id}
+                    className="bg-white/5 border border-white/10 hover:border-white/20 rounded-3xl p-5 md:p-6 space-y-4 transition-all flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      {/* Topo do Card: Perfil, Status e Toggle */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${style.badgeBg} ${style.badgeText}`}>
+                            {c.perfil}
+                          </span>
+                          {c.itinerante && (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold">
+                              ⚡ Itinerante {totalLocais > 0 ? `(${totalLocais} locais)` : ''}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Botão de Ativar / Pausar */}
+                        <button
+                          onClick={() => handleToggleStatus(c)}
+                          disabled={togglingId === c.id}
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors cursor-pointer ${
+                            c.ativo
+                              ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25'
+                              : 'bg-red-500/15 border-red-500/30 text-red-400 hover:bg-red-500/25'
+                          }`}
+                          title={c.ativo ? 'Clique para pausar esta célula no mapa' : 'Clique para reativar esta célula'}
+                        >
+                          <Power className="w-3 h-3" />
+                          <span>{c.ativo ? 'Ativa' : 'Pausada'}</span>
+                        </button>
+                      </div>
+
+                      {/* Nome e Faixa Etária */}
+                      <div>
+                        <h4 className="text-lg md:text-xl font-black text-white">{c.nome}</h4>
+                        {c.faixaEtaria && (
+                          <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Users className="w-3.5 h-3.5" /> {c.faixaEtaria}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Informações de Reunião e Bairro */}
+                      <div className="grid grid-cols-2 gap-2.5 pt-1">
+                        <div className="bg-slate-900/60 rounded-xl p-2.5">
+                          <div className="text-[10px] text-slate-500 font-bold uppercase flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-brand-400" /> Encontro
+                          </div>
+                          <div className="text-xs font-bold text-white mt-0.5">
+                            {dia ? `${dia} ${horario ? `às ${horario}` : ''}` : 'Não definido'}
+                          </div>
+                        </div>
+                        <div className="bg-slate-900/60 rounded-xl p-2.5">
+                          <div className="text-[10px] text-slate-500 font-bold uppercase flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-brand-400" /> Bairro
+                          </div>
+                          <div className="text-xs font-bold text-white mt-0.5 truncate">
+                            {bairro || 'Não informado'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Telefone */}
+                      <div className="flex items-center gap-2 text-xs text-slate-300 bg-slate-900/40 px-3 py-2 rounded-xl">
+                        <Phone className="w-3.5 h-3.5 text-brand-400 flex-shrink-0" />
+                        <span>{c.telefone}</span>
+                      </div>
+                    </div>
+
+                    {/* Botões de Ação do Card */}
+                    <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row gap-2">
+                      <Link
+                        to={`/lider/editar?id=${c.id}`}
+                        className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-brand-400" />
+                        Editar Informações
+                      </Link>
+
+                      {c.itinerante && (
+                        <Link
+                          to={`/lider/itinerante?id=${c.id}`}
+                          className="flex-1 py-2.5 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                          Atualizar Semana
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </main>

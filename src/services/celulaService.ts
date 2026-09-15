@@ -5,6 +5,7 @@ const TABELA = 'celulas';
 
 // Converter linha do Supabase (snake_case) para modelo de Celula do App (camelCase)
 function mapFromRow(row: any): Celula {
+  const encontroAtual = row.encontro_atual as EncontroAtual | undefined;
   return {
     id: row.id,
     nome: row.nome,
@@ -23,7 +24,8 @@ function mapFromRow(row: any): Celula {
     bairro: row.bairro || undefined,
     pontoReferencia: row.ponto_referencia || undefined,
     coords: row.lat && row.lng ? { lat: Number(row.lat), lng: Number(row.lng) } : undefined,
-    encontroAtual: row.encontro_atual as EncontroAtual | undefined,
+    encontroAtual,
+    locaisItinerantes: encontroAtual?.locais || undefined,
     liderUid: row.lider_user_id || row.lider_id || undefined,
     liderEmail: row.lider_email || undefined,
     criadoEm: row.criado_em,
@@ -53,7 +55,13 @@ function mapToRow(data: Partial<Celula>) {
     row.lat = data.coords?.lat ?? null;
     row.lng = data.coords?.lng ?? null;
   }
-  if (data.encontroAtual !== undefined) row.encontro_atual = data.encontroAtual;
+  if (data.encontroAtual !== undefined || data.locaisItinerantes !== undefined) {
+    const encontro = data.encontroAtual ? { ...data.encontroAtual } : ({} as any);
+    if (data.locaisItinerantes !== undefined) {
+      encontro.locais = data.locaisItinerantes;
+    }
+    row.encontro_atual = encontro;
+  }
   if (data.liderEmail !== undefined) row.lider_email = data.liderEmail;
   if (data.liderUid !== undefined) row.lider_user_id = data.liderUid;
   return row;
@@ -162,7 +170,7 @@ export async function getCelulaById(id: string): Promise<Celula | null> {
 }
 
 /**
- * Busca a célula vinculada a um líder pelo e-mail ou UID.
+ * Busca a célula principal vinculada a um líder pelo e-mail ou UID.
  */
 export async function getCelulaByLiderEmailOrUid(
   emailOrUid: string
@@ -175,6 +183,52 @@ export async function getCelulaByLiderEmailOrUid(
 
   if (error || !data) return null;
   return mapFromRow(data);
+}
+
+/**
+ * Busca TODAS as células pertencentes a um determinado líder.
+ */
+export async function getCelulasByLiderEmailOrUid(
+  emailOrUid: string
+): Promise<Celula[]> {
+  const { data, error } = await supabase
+    .from(TABELA)
+    .select('*')
+    .or(`lider_email.ilike.${emailOrUid},lider_user_id.eq.${emailOrUid}`)
+    .order('criado_em', { ascending: false });
+
+  if (error || !data) return [];
+  return data.map(mapFromRow);
+}
+
+/**
+ * Escuta em tempo real as células de um determinado líder.
+ */
+export function listenCelulasLider(
+  emailOrUid: string,
+  callback: (celulas: Celula[]) => void
+): () => void {
+  const fetchLeaderCelulas = async () => {
+    const list = await getCelulasByLiderEmailOrUid(emailOrUid);
+    callback(list);
+  };
+
+  fetchLeaderCelulas();
+
+  const channel = supabase
+    .channel(`lider_celulas_${emailOrUid.replace(/[^a-zA-Z0-9]/g, '_')}`)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: TABELA },
+      () => {
+        fetchLeaderCelulas();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }
 
 /**

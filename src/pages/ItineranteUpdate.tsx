@@ -200,9 +200,46 @@ export default function ItineranteUpdate() {
         <div className="p-4 md:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
           <Info className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
           <p className="text-xs md:text-sm text-amber-300/90 leading-relaxed">
-            Informe o endereço, dia e horário do próximo encontro. Essa informação aparecerá no mapa público para os visitantes de Timóteo.
+            Informe o local, dia e horário do encontro desta semana. Essa informação atualizará imediatamente o marcador no mapa público para os visitantes de Timóteo.
           </p>
         </div>
+
+        {/* Seleção Rápida de Locais da Rota */}
+        {(celula?.locaisItinerantes && celula.locaisItinerantes.length > 0) && (
+          <div className="space-y-2 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+            <div className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-amber-400" />
+              Escolher Local Pré-Cadastrado na Rota da Célula
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              {celula.locaisItinerantes.map((loc) => (
+                <button
+                  key={loc.id}
+                  type="button"
+                  onClick={() => {
+                    if (loc.dia) setValue('dia', loc.dia);
+                    if (loc.horario) setValue('horario', loc.horario);
+                    if (loc.cep) setValue('cep', loc.cep);
+                    if (loc.bairro) setValue('bairro', loc.bairro);
+                    if (loc.coords) {
+                      setValue('lat', loc.coords.lat);
+                      setValue('lng', loc.coords.lng);
+                    }
+                    if (loc.observacao) setValue('observacao', loc.observacao);
+                    setCepMsg(`✓ Selecionado: ${loc.identificador} (${loc.bairro})`);
+                  }}
+                  className="p-3 rounded-xl bg-slate-900/80 hover:bg-amber-500/20 border border-white/10 hover:border-amber-500/40 text-left transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between"
+                >
+                  <div>
+                    <div className="text-xs font-bold text-white">{loc.identificador}</div>
+                    <div className="text-[11px] text-slate-400">📍 Bairro {loc.bairro} {loc.dia ? `· ${loc.dia}` : ''}</div>
+                  </div>
+                  <span className="text-[10px] text-amber-400 font-bold ml-2">Usar Este →</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Data e Dia */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
