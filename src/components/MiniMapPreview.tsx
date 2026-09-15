@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { MapContainer as LeafletMap, TileLayer, Marker, useMap } from 'react-leaflet';
+import { MapContainer as LeafletMap, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import type { Coords } from '../types/celula';
 import { Navigation, ZoomIn, ZoomOut, CheckCircle2 } from 'lucide-react';
@@ -11,24 +11,35 @@ interface MiniMapPreviewProps {
   interactive?: boolean;
 }
 
-// Sub-componente para recentralizar o mapa quando as coordenadas mudam
+// Sub-componente para recentralizar o mapa quando as coordenadas mudam inicialmente
 const MiniMapController: React.FC<{ coords: Coords }> = ({ coords }) => {
   const map = useMap();
 
   useEffect(() => {
     if (coords && coords.lat && coords.lng) {
-      map.flyTo([coords.lat, coords.lng], 17, { duration: 0.8 });
-      // Invalida tamanho para garantir renderização perfeita dentro de modais/containers
+      // Invalida tamanho para garantir renderização perfeita dentro de containers
       setTimeout(() => {
         map.invalidateSize();
-      }, 200);
+      }, 150);
     }
   }, [coords, map]);
 
   return null;
 };
 
-// Gerador do Pin Customizado
+// Captura cliques no mapa para mover o pin instantaneamente
+const MapClickHandler: React.FC<{ onCoordsChange?: (coords: Coords) => void }> = ({ onCoordsChange }) => {
+  useMapEvents({
+    click(e) {
+      if (onCoordsChange) {
+        onCoordsChange({ lat: e.latlng.lat, lng: e.latlng.lng });
+      }
+    },
+  });
+  return null;
+};
+
+// Gerador do Pin Customizado com área clicável e arrastável
 const createExactPinIcon = (label?: string) => {
   const html = `
     <div style="
@@ -36,26 +47,31 @@ const createExactPinIcon = (label?: string) => {
       display: flex;
       flex-direction: column;
       align-items: center;
-      transform: translate(-50%, -100%);
-      pointer-events: none;
+      justify-content: flex-end;
+      width: 180px;
+      height: 52px;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
     ">
       <div style="
         background: linear-gradient(135deg, #FA6400, #EA580C);
         color: #ffffff;
-        padding: 4px 10px;
+        padding: 5px 12px;
         border-radius: 9999px;
         font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
         font-size: 11px;
         font-weight: 800;
-        box-shadow: 0 4px 14px rgba(234, 88, 12, 0.4), 0 2px 6px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45), 0 2px 6px rgba(0,0,0,0.25);
         border: 2px solid #ffffff;
         white-space: nowrap;
         display: flex;
         align-items: center;
         gap: 4px;
+        pointer-events: auto;
       ">
         <span>📍</span>
-        <span>${label || 'Local Exato da Célula'}</span>
+        <span>${label || 'Local Exato'}</span>
       </div>
       <div style="
         width: 0;
@@ -72,7 +88,7 @@ const createExactPinIcon = (label?: string) => {
         border: 2px solid #ffffff;
         border-radius: 50%;
         margin-top: -3px;
-        box-shadow: 0 0 8px rgba(0,0,0,0.5);
+        box-shadow: 0 0 8px rgba(0,0,0,0.6);
       "></div>
     </div>
   `;
@@ -80,8 +96,8 @@ const createExactPinIcon = (label?: string) => {
   return L.divIcon({
     html,
     className: 'exact-pin-marker',
-    iconSize: [0, 0],
-    iconAnchor: [0, 0],
+    iconSize: [180, 52],
+    iconAnchor: [90, 52],
   });
 };
 
@@ -133,6 +149,9 @@ export const MiniMapPreview: React.FC<MiniMapPreviewProps> = ({
           />
 
           <MiniMapController coords={coords} />
+          {interactive && onCoordsChange && (
+            <MapClickHandler onCoordsChange={onCoordsChange} />
+          )}
 
           <Marker
             position={[coords.lat, coords.lng]}
@@ -154,7 +173,7 @@ export const MiniMapPreview: React.FC<MiniMapPreviewProps> = ({
           <button
             type="button"
             onClick={handleZoomIn}
-            className="w-7 h-7 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-white flex items-center justify-center shadow-md border border-white/10 transition-colors"
+            className="w-7 h-7 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-white flex items-center justify-center shadow-md border border-white/10 transition-colors cursor-pointer"
             title="Aproximar Zoom"
           >
             <ZoomIn className="w-3.5 h-3.5" />
@@ -162,7 +181,7 @@ export const MiniMapPreview: React.FC<MiniMapPreviewProps> = ({
           <button
             type="button"
             onClick={handleZoomOut}
-            className="w-7 h-7 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-white flex items-center justify-center shadow-md border border-white/10 transition-colors"
+            className="w-7 h-7 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-white flex items-center justify-center shadow-md border border-white/10 transition-colors cursor-pointer"
             title="Afastar Zoom"
           >
             <ZoomOut className="w-3.5 h-3.5" />
@@ -170,7 +189,7 @@ export const MiniMapPreview: React.FC<MiniMapPreviewProps> = ({
           <button
             type="button"
             onClick={handleRecenter}
-            className="w-7 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shadow-md border border-white/10 transition-colors"
+            className="w-7 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shadow-md border border-white/10 transition-colors cursor-pointer"
             title="Recentralizar no Pin"
           >
             <Navigation className="w-3.5 h-3.5" />
@@ -178,8 +197,15 @@ export const MiniMapPreview: React.FC<MiniMapPreviewProps> = ({
         </div>
 
         {/* Rodapé Informativo */}
-        <div className="absolute left-3 bottom-2 z-10 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 text-[10px] text-slate-300 font-medium pointer-events-none">
-          {interactive && onCoordsChange ? '💡 Você pode arrastar o pin para ajuste fino' : '📍 Pin fixado no endereço'}
+        <div className="absolute left-3 bottom-2 z-10 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 text-[10px] text-slate-300 font-medium pointer-events-none flex items-center gap-1.5">
+          {interactive && onCoordsChange ? (
+            <>
+              <span className="text-amber-400 font-bold">💡 Dica:</span>
+              <span>Clique no mapa ou arraste o pin para ajuste fino</span>
+            </>
+          ) : (
+            <span>📍 Pin fixado no endereço</span>
+          )}
         </div>
       </div>
     </div>
