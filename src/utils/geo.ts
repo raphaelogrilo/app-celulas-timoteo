@@ -104,13 +104,13 @@ export function getProfileStyle(perfil: PerfilCelula | string): ProfileStyle {
   switch (perfil) {
     case 'Jovens':
       return {
-        bg: 'bg-indigo-50',
-        border: 'border-indigo-200',
-        text: 'text-indigo-700',
-        badgeBg: 'bg-indigo-600',
-        badgeText: 'text-white',
-        markerColor: '#4f46e5',
-        pinBg: '#4f46e5',
+        bg: 'bg-[#FFF5ED]',
+        border: 'border-[#FED7AA]',
+        text: 'text-[#C2410C]',
+        badgeBg: 'bg-[#FA6400]',
+        badgeText: 'text-white font-extrabold',
+        markerColor: '#FA6400',
+        pinBg: '#FA6400',
       };
     case 'Casais':
       return {
