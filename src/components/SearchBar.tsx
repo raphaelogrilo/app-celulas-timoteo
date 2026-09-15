@@ -88,7 +88,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   }, []);
 
   return (
-    <div className="relative w-full max-w-md mx-auto px-4 z-20" ref={dropdownRef}>
+    <div className="relative w-full max-w-md md:max-w-2xl mx-auto px-4 z-20" ref={dropdownRef}>
       <div
         className={`relative flex items-center bg-white/95 backdrop-blur-md rounded-2xl shadow-floating transition-all duration-200 border ${
           isFocused ? 'border-brand-500 ring-2 ring-brand-500/20 shadow-brand-500/10' : 'border-slate-200/80 hover:border-slate-300'

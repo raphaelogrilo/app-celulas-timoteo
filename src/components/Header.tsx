@@ -17,7 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <header className="relative z-30 pt-[calc(var(--sat)+10px)] pb-2.5 px-4 bg-gradient-to-b from-slate-950/95 via-slate-900/85 to-transparent backdrop-blur-md">
-      <div className="max-w-md mx-auto flex items-center justify-between">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo da Igreja Atos & Cidade */}
         <div className="flex items-center gap-2.5">
           <AtosLogo size="md" showText={true} textColor="white" />

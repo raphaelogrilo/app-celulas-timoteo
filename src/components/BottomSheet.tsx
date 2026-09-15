@@ -65,34 +65,34 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-40 pointer-events-none flex flex-col justify-end">
+      <div className="fixed inset-0 z-40 pointer-events-none flex flex-col justify-end md:justify-center md:items-center md:p-4">
         {/* Backdrop suave */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm pointer-events-auto"
+          className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm pointer-events-auto"
         />
 
-        {/* Modal Deslizante (BottomSheet) */}
+        {/* Modal Deslizante no Mobile / Dialog Centralizado no Desktop */}
         <motion.div
-          initial={{ y: '100%' }}
-          animate={{ y: 0 }}
-          exit={{ y: '100%' }}
+          initial={{ y: '100%', opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: '100%', opacity: 0 }}
           transition={{ type: 'spring', damping: 26, stiffness: 280 }}
           drag="y"
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={{ top: 0.05, bottom: 0.6 }}
           onDragEnd={handleDragEnd}
-          className="relative w-full max-w-lg mx-auto bg-white rounded-t-[32px] shadow-2xl pointer-events-auto max-h-[85dvh] flex flex-col border-t border-slate-100 overflow-hidden"
+          className="relative w-full max-w-lg md:max-w-md mx-auto bg-white rounded-t-[32px] md:rounded-[32px] shadow-2xl pointer-events-auto max-h-[85dvh] flex flex-col border-t md:border border-slate-100 overflow-hidden"
         >
-          {/* Handle de Arrasto */}
-          <div className="pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing">
+          {/* Handle de Arrasto (somente mobile) */}
+          <div className="pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing md:hidden">
             <div className="w-12 h-1.5 rounded-full bg-slate-200" />
           </div>
 
-          <div className="px-5 pt-2 pb-6 overflow-y-auto no-scrollbar space-y-4">
+          <div className="px-5 pt-3 md:pt-5 pb-6 overflow-y-auto no-scrollbar space-y-4">
             {/* Header: Nome, Bairro e Botões de Topo */}
             <div className="flex items-start justify-between gap-3">
               <div>

@@ -42,9 +42,9 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
   const hasActiveFilter = selectedPerfil !== 'Todos' || selectedDia !== 'Todos';
 
   return (
-    <div className="w-full relative z-20 pt-2 pb-1.5 px-4 space-y-2 max-w-md mx-auto">
+    <div className="w-full relative z-20 pt-2 pb-1.5 px-4 space-y-2 max-w-md md:max-w-3xl mx-auto">
       {/* Linha 1: Perfis (Chips deslizantes) */}
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-4 px-4">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-4 px-4 md:justify-center">
         {hasActiveFilter && (
           <button
             onClick={onResetFilters}

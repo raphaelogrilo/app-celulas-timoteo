@@ -242,13 +242,15 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
 
   return (
     <div className="min-h-dvh bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      <header className="sticky top-0 z-30 bg-slate-950/80 backdrop-blur-md border-b border-white/5 px-4 py-3 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300">
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <h1 className="text-sm font-bold text-white">
-          {mode === 'edit' || celulaIdParam ? 'Editar Célula' : 'Cadastrar Célula'}
-        </h1>
+      <header className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-white/10 px-4 lg:px-8 py-3.5">
+        <div className="max-w-3xl mx-auto flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <h1 className="text-sm md:text-base font-bold text-white">
+            {mode === 'edit' || celulaIdParam ? 'Editar Célula' : 'Cadastrar Célula'}
+          </h1>
+        </div>
       </header>
 
       {isLoadingData ? (
@@ -257,27 +259,28 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
           <p className="text-xs">Carregando dados da célula...</p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit(onSubmit as any)} className="max-w-lg mx-auto px-4 py-6 space-y-6" noValidate>
+        <form onSubmit={handleSubmit(onSubmit as any)} className="max-w-3xl mx-auto px-4 lg:px-8 py-6 lg:py-8 space-y-6" noValidate>
 
-        {/* Nome */}
-        <div>
-          <label className={LABEL_CLASS}><FileText className="inline w-3.5 h-3.5 mr-1" />Nome da Célula</label>
-          <input {...register('nome')} className={FIELD_CLASS} placeholder="Ex: Célula Ágape" />
-          {errors.nome && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.nome.message}</p>}
-        </div>
+        {/* Nome e Perfil (Grid responsivo no Desktop) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={LABEL_CLASS}><FileText className="inline w-3.5 h-3.5 mr-1" />Nome da Célula</label>
+            <input {...register('nome')} className={FIELD_CLASS} placeholder="Ex: Célula Ágape" />
+            {errors.nome && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.nome.message}</p>}
+          </div>
 
-        {/* Perfil */}
-        <div>
-          <label className={LABEL_CLASS}><Users className="inline w-3.5 h-3.5 mr-1" />Perfil do Grupo</label>
-          <select {...register('perfil')} className={FIELD_CLASS + ' appearance-none'}>
-            <option value="">Selecione...</option>
-            {PERFIS.map(p => <option key={p} value={p}>{p}</option>)}
-          </select>
-          {errors.perfil && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.perfil.message}</p>}
+          <div>
+            <label className={LABEL_CLASS}><Users className="inline w-3.5 h-3.5 mr-1" />Perfil do Grupo</label>
+            <select {...register('perfil')} className={FIELD_CLASS + ' appearance-none'}>
+              <option value="">Selecione...</option>
+              {PERFIS.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            {errors.perfil && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.perfil.message}</p>}
+          </div>
         </div>
 
         {/* Líder e Telefone */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className={LABEL_CLASS}>Nome do Líder</label>
             <input {...register('lider')} className={FIELD_CLASS} placeholder="Nome do líder" />
@@ -292,7 +295,7 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
 
         {/* E-mail do Líder (Controle Admin de Vínculo) */}
         {isAdmin && (
-          <div className="p-4 rounded-2xl bg-brand-500/10 border border-brand-500/20 space-y-3">
+          <div className="p-4 md:p-5 rounded-2xl bg-brand-500/10 border border-brand-500/20 space-y-3">
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4 text-brand-400" />
               <div className="text-xs font-bold text-brand-300 uppercase tracking-wider">
@@ -302,56 +305,60 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
             <p className="text-[11px] text-slate-300">
               Associe esta célula ao e-mail Google de um líder cadastrado para que ele possa gerenciá-la pelo painel:
             </p>
-            {lideresList.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {lideresList.length > 0 && (
+                <div>
+                  <label className={LABEL_CLASS}>Selecionar Líder Autorizado</label>
+                  <select
+                    onChange={(e) => {
+                      const sel = lideresList.find((l) => l.email === e.target.value);
+                      if (sel) {
+                        setValue('liderEmail', sel.email);
+                        if (!watch('lider')) setValue('lider', sel.nome);
+                      }
+                    }}
+                    className={FIELD_CLASS + ' appearance-none'}
+                    defaultValue=""
+                  >
+                    <option value="">Selecione para preencher...</option>
+                    {lideresList.map((l) => (
+                      <option key={l.id || l.email} value={l.email}>
+                        {l.nome} ({l.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
-                <label className={LABEL_CLASS}>Selecionar Líder Autorizado</label>
-                <select
-                  onChange={(e) => {
-                    const sel = lideresList.find((l) => l.email === e.target.value);
-                    if (sel) {
-                      setValue('liderEmail', sel.email);
-                      if (!watch('lider')) setValue('lider', sel.nome);
-                    }
-                  }}
-                  className={FIELD_CLASS + ' appearance-none'}
-                  defaultValue=""
-                >
-                  <option value="">Selecione para preencher automaticamente...</option>
-                  {lideresList.map((l) => (
-                    <option key={l.id || l.email} value={l.email}>
-                      {l.nome} ({l.email})
-                    </option>
-                  ))}
-                </select>
+                <label className={LABEL_CLASS}>
+                  <Mail className="inline w-3.5 h-3.5 mr-1" />
+                  E-mail Google do Líder
+                </label>
+                <input
+                  {...register('liderEmail')}
+                  className={FIELD_CLASS}
+                  placeholder="lider@gmail.com"
+                  type="email"
+                />
               </div>
-            )}
-            <div>
-              <label className={LABEL_CLASS}>
-                <Mail className="inline w-3.5 h-3.5 mr-1" />
-                E-mail Google do Líder Responsável
-              </label>
-              <input
-                {...register('liderEmail')}
-                className={FIELD_CLASS}
-                placeholder="lider@gmail.com"
-                type="email"
-              />
             </div>
           </div>
         )}
 
         {/* Descrição e Faixa Etária */}
-        <div>
-          <label className={LABEL_CLASS}>Descrição da Célula</label>
-          <textarea {...register('descricao')} className={FIELD_CLASS + ' resize-none h-20'} placeholder="Um breve texto sobre o grupo..." />
-        </div>
-        <div>
-          <label className={LABEL_CLASS}>Faixa Etária / Público</label>
-          <input {...register('faixaEtaria')} className={FIELD_CLASS} placeholder="Ex: 18 a 29 anos, Famílias, etc." />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={LABEL_CLASS}>Descrição da Célula</label>
+            <textarea {...register('descricao')} className={FIELD_CLASS + ' resize-none h-24'} placeholder="Um breve texto sobre o grupo..." />
+          </div>
+          <div>
+            <label className={LABEL_CLASS}>Faixa Etária / Público</label>
+            <input {...register('faixaEtaria')} className={FIELD_CLASS} placeholder="Ex: 18 a 29 anos, Famílias, etc." />
+          </div>
         </div>
 
         {/* Toggle Itinerante */}
-        <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+        <div className="p-4 md:p-5 rounded-2xl bg-white/5 border border-white/10">
           <label className="flex items-center justify-between cursor-pointer">
             <div>
               <div className="text-sm font-bold text-white">Célula Itinerante</div>
@@ -375,15 +382,15 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
 
         {/* Campos de Endereço (somente para célula FIXA) */}
         {!isItinerante && (
-          <div className="space-y-4 p-4 rounded-2xl bg-white/5 border border-white/10">
+          <div className="space-y-4 p-4 md:p-6 rounded-2xl bg-white/5 border border-white/10">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5" /> Endereço Fixo
             </h3>
 
             {/* Dia e Horário */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className={LABEL_CLASS}><Calendar className="inline w-3.5 h-3.5 mr-1" />Dia</label>
+                <label className={LABEL_CLASS}><Calendar className="inline w-3.5 h-3.5 mr-1" />Dia do Encontro</label>
                 <select {...register('dia')} className={FIELD_CLASS + ' appearance-none'}>
                   <option value="">Selecione...</option>
                   {DIAS.map(d => <option key={d} value={d}>{d}</option>)}
@@ -397,43 +404,45 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
               </div>
             </div>
 
-            {/* CEP */}
-            <div>
-              <label className={LABEL_CLASS}>CEP</label>
-              <div className="relative">
-                <input
-                  {...register('cep')}
-                  className={FIELD_CLASS + ' pr-10'}
-                  placeholder="35180-000"
-                  maxLength={9}
-                  onBlur={(e) => handleCepBlur(e.target.value)}
-                />
-                {isLoadingCep && (
-                  <Loader2 className="absolute right-3 top-3.5 w-4 h-4 animate-spin text-brand-400" />
-                )}
+            {/* CEP e Bairro */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={LABEL_CLASS}>CEP (Timóteo)</label>
+                <div className="relative">
+                  <input
+                    {...register('cep')}
+                    className={FIELD_CLASS + ' pr-10'}
+                    placeholder="35180-000"
+                    maxLength={9}
+                    onBlur={(e) => handleCepBlur(e.target.value)}
+                  />
+                  {isLoadingCep && (
+                    <Loader2 className="absolute right-3 top-3.5 w-4 h-4 animate-spin text-brand-400" />
+                  )}
+                </div>
+                {cepFeedback && <p className="text-[11px] text-brand-400 mt-1">{cepFeedback}</p>}
+                {errors.cep && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.cep.message}</p>}
               </div>
-              {cepFeedback && <p className="text-[11px] text-brand-400 mt-1">{cepFeedback}</p>}
-              {errors.cep && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.cep.message}</p>}
+
+              <div>
+                <label className={LABEL_CLASS}>Bairro</label>
+                <input {...register('bairro')} className={FIELD_CLASS} placeholder="Ex: Funcionários" />
+                {errors.bairro && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.bairro.message}</p>}
+              </div>
             </div>
 
-            {/* Endereço */}
-            <div>
-              <label className={LABEL_CLASS}>Endereço Completo</label>
-              <input {...register('endereco')} className={FIELD_CLASS} placeholder="Rua, número" />
-              {errors.endereco && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.endereco.message}</p>}
-            </div>
+            {/* Endereço e Ponto de Referência */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={LABEL_CLASS}>Endereço Completo</label>
+                <input {...register('endereco')} className={FIELD_CLASS} placeholder="Rua, número" />
+                {errors.endereco && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.endereco.message}</p>}
+              </div>
 
-            {/* Bairro */}
-            <div>
-              <label className={LABEL_CLASS}>Bairro</label>
-              <input {...register('bairro')} className={FIELD_CLASS} placeholder="Ex: Funcionários" />
-              {errors.bairro && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.bairro.message}</p>}
-            </div>
-
-            {/* Ponto de Referência */}
-            <div>
-              <label className={LABEL_CLASS}>Ponto de Referência</label>
-              <input {...register('pontoReferencia')} className={FIELD_CLASS} placeholder="Ex: Perto da padaria central" />
+              <div>
+                <label className={LABEL_CLASS}>Ponto de Referência</label>
+                <input {...register('pontoReferencia')} className={FIELD_CLASS} placeholder="Ex: Perto da padaria..." />
+              </div>
             </div>
           </div>
         )}

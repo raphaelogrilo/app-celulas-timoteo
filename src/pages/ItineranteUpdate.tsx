@@ -159,38 +159,41 @@ export default function ItineranteUpdate() {
 
   return (
     <div className="min-h-dvh bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      <header className="sticky top-0 z-30 bg-slate-950/80 backdrop-blur-md border-b border-white/5 px-4 py-3 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300">
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div>
-          <div className="text-sm font-bold text-white flex items-center gap-2">
-            <RefreshCw className="w-4 h-4 text-amber-400" />
-            Atualizar Endereço desta Semana
+      <header className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-white/10 px-4 lg:px-8 py-3.5">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div>
+              <div className="text-sm md:text-base font-bold text-white flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-amber-400" />
+                Atualizar Endereço desta Semana
+              </div>
+              {celula && <div className="text-[11px] text-amber-400/80">{celula.nome}</div>}
+            </div>
           </div>
-          {celula && <div className="text-[11px] text-amber-400/80">{celula.nome}</div>}
         </div>
       </header>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="max-w-lg mx-auto px-4 py-6 space-y-5" noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl mx-auto px-4 lg:px-8 py-6 lg:py-8 space-y-6" noValidate>
 
         {/* Aviso contextual */}
-        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
+        <div className="p-4 md:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
           <Info className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-          <p className="text-[12px] text-amber-400/90 leading-relaxed">
-            Informe o endereço, dia e horário do próximo encontro. Essa informação aparecerá no mapa público para os visitantes.
+          <p className="text-xs md:text-sm text-amber-300/90 leading-relaxed">
+            Informe o endereço, dia e horário do próximo encontro. Essa informação aparecerá no mapa público para os visitantes de Timóteo.
           </p>
         </div>
 
-        {/* Data do Encontro */}
-        <div>
-          <label className={LABEL_CLASS}><Calendar className="inline w-3.5 h-3.5 mr-1" />Data do Encontro</label>
-          <input {...register('dataReferencia')} type="date" className={FIELD_CLASS} />
-          {errors.dataReferencia && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.dataReferencia.message}</p>}
-        </div>
+        {/* Data e Dia */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={LABEL_CLASS}><Calendar className="inline w-3.5 h-3.5 mr-1" />Data do Encontro</label>
+            <input {...register('dataReferencia')} type="date" className={FIELD_CLASS} />
+            {errors.dataReferencia && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.dataReferencia.message}</p>}
+          </div>
 
-        {/* Dia e Horário */}
-        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={LABEL_CLASS}>Dia da Semana</label>
             <select {...register('dia')} className={FIELD_CLASS + ' appearance-none'}>
@@ -199,51 +202,59 @@ export default function ItineranteUpdate() {
             </select>
             {errors.dia && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.dia.message}</p>}
           </div>
+        </div>
+
+        {/* Horário e CEP */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className={LABEL_CLASS}><Clock className="inline w-3.5 h-3.5 mr-1" />Horário</label>
             <input {...register('horario')} type="time" className={FIELD_CLASS} />
             {errors.horario && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.horario.message}</p>}
           </div>
-        </div>
 
-        {/* CEP */}
-        <div>
-          <label className={LABEL_CLASS}><MapPin className="inline w-3.5 h-3.5 mr-1" />CEP</label>
-          <div className="relative">
-            <input
-              {...register('cep')}
-              className={FIELD_CLASS + ' pr-10'}
-              placeholder="35180-000"
-              maxLength={9}
-              onBlur={(e) => handleCepBlur(e.target.value)}
-            />
-            {loadingCep && <Loader2 className="absolute right-3 top-3.5 w-4 h-4 animate-spin text-amber-400" />}
+          <div>
+            <label className={LABEL_CLASS}><MapPin className="inline w-3.5 h-3.5 mr-1" />CEP (Timóteo)</label>
+            <div className="relative">
+              <input
+                {...register('cep')}
+                className={FIELD_CLASS + ' pr-10'}
+                placeholder="35180-000"
+                maxLength={9}
+                onBlur={(e) => handleCepBlur(e.target.value)}
+              />
+              {loadingCep && <Loader2 className="absolute right-3 top-3.5 w-4 h-4 animate-spin text-amber-400" />}
+            </div>
+            {cepMsg && <p className="text-[11px] text-amber-400 mt-1">{cepMsg}</p>}
+            {errors.cep && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.cep.message}</p>}
           </div>
-          {cepMsg && <p className="text-[11px] text-amber-400 mt-1">{cepMsg}</p>}
-          {errors.cep && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.cep.message}</p>}
         </div>
 
         {/* Endereço e Bairro */}
-        <div>
-          <label className={LABEL_CLASS}>Endereço Completo</label>
-          <input {...register('endereco')} className={FIELD_CLASS} placeholder="Rua, número" />
-          {errors.endereco && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.endereco.message}</p>}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={LABEL_CLASS}>Endereço Completo</label>
+            <input {...register('endereco')} className={FIELD_CLASS} placeholder="Rua, número" />
+            {errors.endereco && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.endereco.message}</p>}
+          </div>
+
+          <div>
+            <label className={LABEL_CLASS}>Bairro</label>
+            <input {...register('bairro')} className={FIELD_CLASS} placeholder="Ex: Funcionários" />
+            {errors.bairro && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.bairro.message}</p>}
+          </div>
         </div>
 
-        <div>
-          <label className={LABEL_CLASS}>Bairro</label>
-          <input {...register('bairro')} className={FIELD_CLASS} placeholder="Ex: Funcionários" />
-          {errors.bairro && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.bairro.message}</p>}
-        </div>
+        {/* Ponto de Referência e Observação */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={LABEL_CLASS}>Ponto de Referência</label>
+            <input {...register('pontoReferencia')} className={FIELD_CLASS} placeholder="Ex: Casa com portão azul..." />
+          </div>
 
-        <div>
-          <label className={LABEL_CLASS}>Ponto de Referência</label>
-          <input {...register('pontoReferencia')} className={FIELD_CLASS} placeholder="Ex: Casa com portão azul, ao lado da Igreja..." />
-        </div>
-
-        <div>
-          <label className={LABEL_CLASS}>Observação (opcional)</label>
-          <textarea {...register('observacao')} className={FIELD_CLASS + ' resize-none h-16'} placeholder="Algum aviso especial para esta semana?" />
+          <div>
+            <label className={LABEL_CLASS}>Observação (opcional)</label>
+            <input {...register('observacao')} className={FIELD_CLASS} placeholder="Ex: Traga sua Bíblia e um lanche..." />
+          </div>
         </div>
 
         {/* Coords ocultos */}
