@@ -61,8 +61,26 @@ const baseSchema = z.object({
   if (!data.itinerante) {
     if (!data.dia) ctx.addIssue({ code: 'custom', path: ['dia'], message: 'Selecione o dia do encontro' });
     if (!data.horario) ctx.addIssue({ code: 'custom', path: ['horario'], message: 'Informe o horário' });
-    if (!data.cep) ctx.addIssue({ code: 'custom', path: ['cep'], message: 'Informe o CEP' });
-    if (!data.bairro) ctx.addIssue({ code: 'custom', path: ['bairro'], message: 'Informe o bairro' });
+    if (!data.cep || data.cep.replace(/\D/g, '').length !== 8) {
+      ctx.addIssue({ code: 'custom', path: ['cep'], message: 'Informe um CEP válido de 8 dígitos' });
+    }
+    if (!data.bairro || !data.bairro.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['bairro'], message: 'Informe o bairro' });
+    }
+    if (!data.endereco || data.endereco.trim().length < 4) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['endereco'],
+        message: 'Obrigatório informar o endereço exato (Rua/Avenida e Número, ex: Rua 19 de Novembro, 160) para poder adicionar a célula ao mapa',
+      });
+    }
+    if (!data.coords || typeof data.coords.lat !== 'number' || typeof data.coords.lng !== 'number') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['endereco'],
+        message: 'Obrigatório localizar a posição exata do pin no mapa através do endereço',
+      });
+    }
   }
 });
 
@@ -279,9 +297,36 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
     setNovoCepLoading(false);
   };
 
+  // Geocodificação de Endereço Exato do Novo Local Itinerante
+  const handleNovoLocalAddressGeocode = async () => {
+    const rawEnd = novoLocal.endereco || '';
+    const bai = novoLocal.bairro || '';
+    const cepVal = novoLocal.cep || '';
+    if (!rawEnd.trim() && !bai.trim()) return;
+
+    const formattedEnd = formatGoogleMapsAddress(rawEnd);
+    if (formattedEnd) {
+      setNovoLocal(prev => ({ ...prev, endereco: formattedEnd }));
+    }
+
+    setNovoCepLoading(true);
+    const coords = await geocodeAddress(formattedEnd || rawEnd, bai, cepVal);
+    if (coords) {
+      setNovoLocal(prev => ({ ...prev, coords }));
+      setNovoCepFeedback(`📍 Localização exata encontrada no mapa: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+    } else {
+      setNovoCepFeedback('Não foi possível localizar o número exato, usando centro do bairro.');
+    }
+    setNovoCepLoading(false);
+  };
+
   const handleAdicionarNovoLocal = () => {
     if (!novoLocal.identificador.trim()) {
       alert('Informe um nome/identificador para este local (Ex: Casa do Marcos).');
+      return;
+    }
+    if (!novoLocal.endereco?.trim() || novoLocal.endereco.trim().length < 4) {
+      alert('Informe o endereço exato com logradouro e número (Ex: Rua 19 de Novembro, 160) para poder adicionar ao mapa.');
       return;
     }
     if (!novoLocal.bairro.trim()) {
@@ -292,6 +337,7 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
     const item: LocalItinerante = {
       id: 'loc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       identificador: novoLocal.identificador.trim(),
+      endereco: novoLocal.endereco.trim(),
       cep: novoLocal.cep.trim(),
       bairro: novoLocal.bairro.trim(),
       dia: novoLocal.dia,
@@ -330,6 +376,11 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
       };
 
       if (data.itinerante) {
+        if (locaisItinerantes.length === 0) {
+          setSubmitError('Para célula itinerante, é obrigatório cadastrar pelo menos um local com endereço exato na rota para posicionar no mapa.');
+          return;
+        }
+
         payload.dia = undefined;
         payload.horario = undefined;
         payload.cep = undefined;
@@ -345,6 +396,7 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
             dia: activeLoc.dia || 'Quarta-feira',
             horario: activeLoc.horario || '19:30',
             cep: activeLoc.cep,
+            endereco: activeLoc.endereco,
             bairro: activeLoc.bairro,
             coords: activeLoc.coords,
             dataReferencia: originalCelula?.encontroAtual?.dataReferencia || new Date().toISOString().split('T')[0],
@@ -608,6 +660,7 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
                           )}
                         </div>
                         <div className="text-xs text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          {loc.endereco && <span>🏠 <strong className="text-amber-200">{loc.endereco}</strong></span>}
                           <span>📍 Bairro: <strong className="text-white">{loc.bairro}</strong></span>
                           {loc.cep && <span>CEP: {loc.cep}</span>}
                           {loc.dia && <span>🗓️ {loc.dia} {loc.horario ? `às ${loc.horario}` : ''}</span>}
@@ -674,6 +727,30 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
                 </div>
               </div>
 
+              {/* Endereço Exato do Local Itinerante */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className={LABEL_CLASS + ' mb-0'}>
+                    Endereço Exato (Rua / Avenida e Número) <span className="text-amber-400 font-bold">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleNovoLocalAddressGeocode}
+                    className="text-[11px] text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Sparkles className="w-3 h-3" /> Localizar no Mapa
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={novoLocal.endereco}
+                  onChange={(e) => setNovoLocal({ ...novoLocal, endereco: e.target.value })}
+                  onBlur={handleNovoLocalAddressGeocode}
+                  placeholder="Ex: Rua 19 de Novembro, 160, Apto 201"
+                  className={FIELD_CLASS}
+                />
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <label className={LABEL_CLASS}>Bairro</label>
@@ -731,9 +808,23 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
         {/* Campos de Endereço (somente para célula FIXA) */}
         {!isItinerante && (
           <div className="space-y-4 p-4 md:p-6 rounded-2xl bg-white/5 border border-white/10">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5" /> Endereço Fixo
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-brand-400" /> Endereço Fixo Obrigatório
+              </h3>
+              <span className="px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 text-[10px] font-bold border border-brand-500/30">
+                Obrigatório para o Mapa
+              </span>
+            </div>
+
+            {/* Banner de Aviso: Endereço Exato Obrigatório */}
+            <div className="p-3.5 rounded-2xl bg-brand-500/10 border border-brand-500/20 text-xs text-brand-200 flex items-start gap-2.5">
+              <Shield className="w-4 h-4 text-brand-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-white block mb-0.5">Endereço Exato Obrigatório para Posicionar no Mapa</strong>
+                A célula só poderá ser salva e exibida no mapa quando o líder fornecer o endereço exato com número (Rua/Av e Nº) e o pin estiver localizado.
+              </div>
+            </div>
 
             {/* Dia e Horário */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -26,6 +26,7 @@ export interface Coords {
 export interface LocalItinerante {
   id: string;
   identificador: string; // Ex: "Casa do Marcos", "Família Silva", "Espaço 1"
+  endereco?: string; // Endereço exato: Rua e Número
   bairro: string;
   cep: string;
   coords: Coords;
