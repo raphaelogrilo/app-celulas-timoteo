@@ -7,6 +7,36 @@ export const BAIRROS_TIMOTEO: BairroTimoteo[] = [
     coords: { lat: -19.5828, lng: -42.6436 },
   },
   {
+    nome: 'Centro Sul',
+    cepPadrao: '35180-002',
+    coords: { lat: -19.5870, lng: -42.6440 },
+  },
+  {
+    nome: 'Centro Norte',
+    cepPadrao: '35180-002',
+    coords: { lat: -19.5780, lng: -42.6430 },
+  },
+  {
+    nome: 'Ana Rita',
+    cepPadrao: '35182-000',
+    coords: { lat: -19.6100, lng: -42.6520 },
+  },
+  {
+    nome: 'Eldorado',
+    cepPadrao: '35180-320',
+    coords: { lat: -19.5950, lng: -42.6320 },
+  },
+  {
+    nome: 'Quitandinha',
+    cepPadrao: '35170-000',
+    coords: { lat: -19.5250, lng: -42.6280 },
+  },
+  {
+    nome: 'Rotativa',
+    cepPadrao: '35180-000',
+    coords: { lat: -19.5850, lng: -42.6410 },
+  },
+  {
     nome: 'Funcionários',
     cepPadrao: '35180-020',
     coords: { lat: -19.5785, lng: -42.6390 },

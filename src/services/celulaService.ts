@@ -316,6 +316,8 @@ export async function toggleCelulaAtivo(
   }
 }
 
+import { CELULAS_SEED } from '../data/celulas';
+
 /**
  * Deleta permanentemente uma célula (somente admin).
  */
@@ -327,5 +329,37 @@ export async function deleteCelula(id: string): Promise<void> {
 
   if (error) {
     throw new Error(`Erro ao remover célula: ${error.message}`);
+  }
+}
+
+/**
+ * Reseta o banco de células e insere as 13 células oficiais com coordenadas exatas.
+ */
+export async function resetAndSeedOfficialCelulas(): Promise<void> {
+  // 1. Remover células atuais
+  const { error: deleteError } = await supabase
+    .from(TABELA)
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000'); // Deleta todas
+
+  if (deleteError) {
+    console.warn('Erro ao deletar células existentes:', deleteError.message);
+  }
+
+  // 2. Inserir as 13 novas células
+  const rows = CELULAS_SEED.map((c) => {
+    const row = mapToRow(c);
+    return {
+      ...row,
+      ativo: true,
+    };
+  });
+
+  const { error: insertError } = await supabase
+    .from(TABELA)
+    .insert(rows);
+
+  if (insertError) {
+    throw new Error(`Erro ao inserir as 13 células oficiais: ${insertError.message}`);
   }
 }

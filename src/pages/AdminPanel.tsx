@@ -5,14 +5,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllLideres, createLider, deleteLider } from '../services/authService';
-import { listenAllCelulasAdmin, toggleCelulaAtivo, deleteCelula } from '../services/celulaService';
+import { listenAllCelulasAdmin, toggleCelulaAtivo, deleteCelula, resetAndSeedOfficialCelulas } from '../services/celulaService';
 import type { LiderUser, Celula } from '../types/celula';
 import { getProfileStyle } from '../utils/geo';
 import {
   Users, Plus, Trash2, Power, PowerOff, Loader2, AlertCircle,
   ArrowLeft, Shield, MapPin, ChevronDown, ChevronUp, CheckCircle,
   Edit3, RefreshCw, Search, LogOut, Navigation, CheckCircle2,
-  Calendar, Phone, Mail, Compass,
+  Calendar, Phone, Mail, Compass, Sparkles,
 } from 'lucide-react';
 
 const newLiderSchema = z.object({
@@ -29,6 +29,7 @@ export default function AdminPanel() {
   const [lideres, setLideres] = useState<LiderUser[]>([]);
   const [celulas, setCelulas] = useState<Celula[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [resetting, setResetting] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [submitMsg, setSubmitMsg] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -89,6 +90,21 @@ export default function AdminPanel() {
       setSubmitMsg(`Autorização de "${nome}" revogada.`);
     } catch (err: any) {
       alert(`Erro ao remover líder: ${err?.message}`);
+    }
+  };
+
+  const handleResetOfficialCells = async () => {
+    if (!confirm('Deseja realmente resetar todas as células do app e carregar as 13 células oficiais do cronograma com localização precisa?')) {
+      return;
+    }
+    try {
+      setResetting(true);
+      await resetAndSeedOfficialCelulas();
+      setSubmitMsg('✅ Banco de dados atualizado com sucesso com as 13 Células Oficiais da Igreja Atos!');
+    } catch (err: any) {
+      alert('Erro ao resetar células: ' + err?.message);
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -427,13 +443,26 @@ export default function AdminPanel() {
                     </p>
                   </div>
 
-                  <Link
-                    to="/lider/cadastro"
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition-all shadow-md active:scale-95 flex-shrink-0"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Nova Célula
-                  </Link>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={handleResetOfficialCells}
+                      disabled={resetting}
+                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                      title="Apaga os dados antigos e carrega as 13 células oficiais com localização exata"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{resetting ? 'Carregando...' : 'Carregar 13 Células Oficiais'}</span>
+                    </button>
+
+                    <Link
+                      to="/lider/cadastro"
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition-all shadow-md active:scale-95 flex-shrink-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Nova Célula
+                    </Link>
+                  </div>
                 </div>
 
                 {/* Filtros e Busca de Células */}
