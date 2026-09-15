@@ -134,13 +134,13 @@ export function getProfileStyle(perfil: PerfilCelula | string): ProfileStyle {
       };
     case 'Mulheres':
       return {
-        bg: 'bg-pink-50',
-        border: 'border-pink-200',
-        text: 'text-pink-700',
-        badgeBg: 'bg-pink-600',
+        bg: 'bg-[#FDF2F4]',
+        border: 'border-[#E8BAC7]',
+        text: 'text-[#9B3D55]',
+        badgeBg: 'bg-[#B75D74]',
         badgeText: 'text-white',
-        markerColor: '#db2777',
-        pinBg: '#db2777',
+        markerColor: '#B75D74',
+        pinBg: '#B75D74',
       };
     case 'Homens':
       return {
