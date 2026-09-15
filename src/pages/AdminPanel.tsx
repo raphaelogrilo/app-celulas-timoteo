@@ -210,6 +210,7 @@ export default function AdminPanel() {
           c.lider.toLowerCase().includes(q) ||
           bairro.toLowerCase().includes(q) ||
           (c.perfil || '').toLowerCase().includes(q) ||
+          (c.ministerio || '').toLowerCase().includes(q) ||
           (c.liderEmail || '').toLowerCase().includes(q)
         );
       }
@@ -811,7 +812,7 @@ export default function AdminPanel() {
                               <div>
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${pStyle.badgeBg} ${pStyle.badgeText}`}>
-                                    {c.perfil}
+                                    {c.ministerio || c.perfil}
                                   </span>
                                   {c.itinerante && (
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">

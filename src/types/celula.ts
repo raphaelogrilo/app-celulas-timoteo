@@ -52,6 +52,7 @@ export interface Celula {
   id: string;
   nome: string;
   perfil: 'Jovens' | 'Casais' | 'Família' | 'Homens' | 'Mulheres' | 'Teens' | 'Misto';
+  ministerio?: string;
   lider: string;
   telefone: string;
   fotoLider?: string;

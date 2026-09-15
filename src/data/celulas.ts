@@ -8,6 +8,7 @@ export const CELULAS_SEED: Celula[] = [
   {
     id: 'cel-homens-1',
     nome: 'Forja 1 · Homens de Atos',
+    ministerio: 'Homens de Atos',
     perfil: 'Homens',
     lider: 'André e Lucas',
     telefone: '(31) 98667-1116',
@@ -23,6 +24,7 @@ export const CELULAS_SEED: Celula[] = [
   {
     id: 'cel-homens-2',
     nome: 'Forja 2 · Homens de Atos',
+    ministerio: 'Homens de Atos',
     perfil: 'Homens',
     lider: 'Weldherson',
     telefone: '(31) 98869-5702',
@@ -42,6 +44,7 @@ export const CELULAS_SEED: Celula[] = [
   {
     id: 'cel-mulheres-1',
     nome: 'Celeiro 1 · Mulheres de Atitude',
+    ministerio: 'Mulheres de Atitude',
     perfil: 'Mulheres',
     lider: 'Dani',
     telefone: '(31) 98556-7182',
@@ -57,6 +60,7 @@ export const CELULAS_SEED: Celula[] = [
   {
     id: 'cel-mulheres-2',
     nome: 'Celeiro 2 · Mulheres de Atitude',
+    ministerio: 'Mulheres de Atitude',
     perfil: 'Mulheres',
     lider: 'Kenya',
     telefone: '(31) 98666-1390',
@@ -80,6 +84,7 @@ export const CELULAS_SEED: Celula[] = [
   {
     id: 'cel-mulheres-3',
     nome: 'Celeiro 3 · Mulheres de Atitude',
+    ministerio: 'Mulheres de Atitude',
     perfil: 'Mulheres',
     lider: 'Alessandra',
     telefone: '(31) 98559-6079',
@@ -103,6 +108,7 @@ export const CELULAS_SEED: Celula[] = [
   {
     id: 'cel-mulheres-4',
     nome: 'Celeiro 4 · Mulheres de Atitude',
+    ministerio: 'Mulheres de Atitude',
     perfil: 'Mulheres',
     lider: 'Mariza',
     telefone: '(31) 98921-0138',
@@ -118,6 +124,7 @@ export const CELULAS_SEED: Celula[] = [
   {
     id: 'cel-mulheres-5',
     nome: 'Celeiro 5 · Mulheres de Atitude',
+    ministerio: 'Mulheres de Atitude',
     perfil: 'Mulheres',
     lider: 'Rayane',
     telefone: '(31) 98876-6717',
@@ -137,6 +144,7 @@ export const CELULAS_SEED: Celula[] = [
   {
     id: 'cel-hope-1',
     nome: 'Célula Mista 1 · Hope',
+    ministerio: 'Ministério Hope (Casais)',
     perfil: 'Casais',
     lider: 'Douglas',
     telefone: '(31) 98719-0455',
@@ -152,6 +160,7 @@ export const CELULAS_SEED: Celula[] = [
   {
     id: 'cel-hope-2',
     nome: 'Célula Mista 2 · Hope',
+    ministerio: 'Ministério Hope (Casais)',
     perfil: 'Casais',
     lider: 'Emerson e Laudiceia',
     telefone: '(31) 98305-1984',
@@ -171,6 +180,7 @@ export const CELULAS_SEED: Celula[] = [
   {
     id: 'cel-flamma-1',
     nome: 'Tocha (25+) · Flamma',
+    ministerio: 'Ministério Flamma (Jovens)',
     perfil: 'Jovens',
     lider: 'Herlaine',
     telefone: '(31) 98552-8562',
@@ -187,6 +197,7 @@ export const CELULAS_SEED: Celula[] = [
   {
     id: 'cel-flamma-2',
     nome: 'Fuego · Flamma',
+    ministerio: 'Ministério Flamma (Jovens)',
     perfil: 'Jovens',
     lider: 'Leander',
     telefone: '(32) 99180-6896',
@@ -206,6 +217,7 @@ export const CELULAS_SEED: Celula[] = [
   {
     id: 'cel-flick-1',
     nome: 'Brasa · Flick',
+    ministerio: 'Ministério Flick (Adolescentes)',
     perfil: 'Teens',
     lider: 'Vera',
     telefone: '(31) 98662-3476',
@@ -221,6 +233,7 @@ export const CELULAS_SEED: Celula[] = [
   {
     id: 'cel-flick-2',
     nome: 'Fire · Flick',
+    ministerio: 'Ministério Flick (Adolescentes)',
     perfil: 'Teens',
     lider: 'Edenia',
     telefone: '(31) 98599-9229',

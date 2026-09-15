@@ -10,6 +10,7 @@ function mapFromRow(row: any): Celula {
     id: row.id,
     nome: row.nome,
     perfil: row.perfil,
+    ministerio: row.ministerio || undefined,
     lider: row.lider,
     telefone: row.telefone,
     fotoLider: row.foto_lider || undefined,
@@ -38,6 +39,7 @@ function mapToRow(data: Partial<Celula>) {
   const row: Record<string, any> = {};
   if (data.nome !== undefined) row.nome = data.nome;
   if (data.perfil !== undefined) row.perfil = data.perfil;
+  if (data.ministerio !== undefined) row.ministerio = data.ministerio;
   if (data.lider !== undefined) row.lider = data.lider;
   if (data.telefone !== undefined) row.telefone = data.telefone;
   if (data.fotoLider !== undefined) row.foto_lider = data.fotoLider;

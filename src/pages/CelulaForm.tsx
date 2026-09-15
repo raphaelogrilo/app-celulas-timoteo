@@ -21,7 +21,15 @@ import {
   Trash2, Plus, CheckCircle2, Sparkles,
 } from 'lucide-react';
 
-const PERFIS = ['Jovens', 'Casais', 'Família', 'Homens', 'Mulheres', 'Teens', 'Misto'] as const;
+export const MINISTERIOS_OPCOES = [
+  { valor: 'Homens de Atos', perfil: 'Homens', label: 'Homens de Atos' },
+  { valor: 'Mulheres de Atitude', perfil: 'Mulheres', label: 'Mulheres de Atitude' },
+  { valor: 'Ministério Hope (Casais)', perfil: 'Casais', label: 'Ministério Hope (Casais)' },
+  { valor: 'Ministério Flamma (Jovens)', perfil: 'Jovens', label: 'Ministério Flamma (Jovens)' },
+  { valor: 'Ministério Flick (Adolescentes)', perfil: 'Teens', label: 'Ministério Flick (Adolescentes)' },
+  { valor: 'Família', perfil: 'Família', label: 'Família' },
+] as const;
+
 const DIAS = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'] as const;
 
 const coordsSchema = z.object({
@@ -30,8 +38,9 @@ const coordsSchema = z.object({
 });
 
 const baseSchema = z.object({
-  nome: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
-  perfil: z.enum(PERFIS, { message: 'Selecione um perfil' }),
+  nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  ministerio: z.string().min(1, 'Selecione o ministério'),
+  perfil: z.string().optional(),
   lider: z.string().min(3, 'Informe o nome do líder'),
   telefone: z.string().min(10, 'Telefone inválido').max(15),
   liderEmail: z.string().optional(),
@@ -145,7 +154,9 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
       setExistingId(celula.id);
       setOriginalCelula(celula);
       setValue('nome', celula.nome);
-      setValue('perfil', celula.perfil);
+      const matchedMin = celula.ministerio || MINISTERIOS_OPCOES.find(m => m.perfil === celula.perfil)?.valor || '';
+      setValue('ministerio', matchedMin);
+      setValue('perfil', celula.perfil || MINISTERIOS_OPCOES.find(m => m.valor === matchedMin)?.perfil || 'Misto');
       setValue('lider', celula.lider);
       setValue('telefone', celula.telefone);
       setValue('liderEmail', celula.liderEmail ?? '');
@@ -307,8 +318,13 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
     if (!currentUser) return;
     setSubmitError(null);
     try {
+      const selectedMinObj = MINISTERIOS_OPCOES.find(m => m.valor === data.ministerio);
+      const perfilFinal = selectedMinObj ? selectedMinObj.perfil : (data.perfil || 'Misto');
+
       const payload: any = {
         ...data,
+        ministerio: data.ministerio,
+        perfil: perfilFinal,
         itinerante: data.itinerante,
         ativo: data.ativo ?? true,
       };
@@ -431,21 +447,25 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
           noValidate
         >
 
-        {/* Nome e Perfil (Grid responsivo no Desktop) */}
+        {/* Nome e Ministério (Grid responsivo no Desktop) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className={LABEL_CLASS}><FileText className="inline w-3.5 h-3.5 mr-1" />Nome da Célula</label>
-            <input {...register('nome')} className={FIELD_CLASS} placeholder="Ex: Célula Ágape" />
+            <input {...register('nome')} className={FIELD_CLASS} placeholder="Ex: Forja 1, Célula Ágape..." />
             {errors.nome && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.nome.message}</p>}
           </div>
 
           <div>
-            <label className={LABEL_CLASS}><Users className="inline w-3.5 h-3.5 mr-1" />Perfil do Grupo</label>
-            <select {...register('perfil')} className={FIELD_CLASS + ' appearance-none'}>
-              <option value="">Selecione...</option>
-              {PERFIS.map(p => <option key={p} value={p}>{p}</option>)}
+            <label className={LABEL_CLASS}><Users className="inline w-3.5 h-3.5 mr-1" />Ministério</label>
+            <select {...register('ministerio')} className={FIELD_CLASS + ' appearance-none'}>
+              <option value="">Selecione o ministério...</option>
+              {MINISTERIOS_OPCOES.map(m => (
+                <option key={m.valor} value={m.valor}>
+                  {m.label}
+                </option>
+              ))}
             </select>
-            {errors.perfil && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.perfil.message}</p>}
+            {errors.ministerio && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.ministerio.message}</p>}
           </div>
         </div>
 

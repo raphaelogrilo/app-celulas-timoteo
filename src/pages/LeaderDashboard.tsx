@@ -52,6 +52,7 @@ export default function LeaderDashboard() {
     return celulas.filter(c =>
       c.nome.toLowerCase().includes(s) ||
       c.perfil.toLowerCase().includes(s) ||
+      (c.ministerio && c.ministerio.toLowerCase().includes(s)) ||
       (c.bairro && c.bairro.toLowerCase().includes(s))
     );
   }, [celulas, searchTerm]);
@@ -209,7 +210,7 @@ export default function LeaderDashboard() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${style.badgeBg} ${style.badgeText}`}>
-                            {c.perfil}
+                            {c.ministerio || c.perfil}
                           </span>
                           {c.itinerante && (
                             <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold">
