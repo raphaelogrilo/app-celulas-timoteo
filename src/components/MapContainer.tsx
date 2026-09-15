@@ -103,22 +103,54 @@ const PINS_SVG_INLINE: Record<string, string> = {
   flick: `<svg viewBox="0 0 128.25 175.5" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><path fill="#7f0000" d="M70.85,157.74c-2.25,2.72-6.26,2.82-8.49.16-6.84-8.15-13.05-16.58-18.79-25.57-6.34-9.92-12.33-21.34-15.04-32.82-2.86-12.12,0-24.6,8.04-34.22,7.56-9.03,19.12-14.27,31.11-13.89,24.78.79,42.52,23.94,36.78,48.04-1.17,4.92-2.8,9.69-4.97,14.47-7.01,15.4-17.77,30.63-28.64,43.82Z"/><path fill="#f00d0a" d="M83.78,100.34c-1.06-7.74,1.07-20.65,1.12-28.94.08-13-1.13-51.1-1.85-55.73l-17.69,55.74c-.46,2.37-1.24,4.31-1.77,6.45l-2.43,6.16c-5.5-8.75-17.12-23.01-24.38-32.97l-3.95-4.09c-.21,3.6,2.13,10.08,3.22,13.95l9.67,35.39c.46,2.29-.03-.56.24,1.7l-.1,1.59c-2.67-.4-3.78-1.17-6.63-1.95l-12.14-3.7c-3.55-1.3-1.84-1.55-5.71-1.62,3.92,5.16,12.15,12.45,17.19,17.44,5.97,5.91,12.48,9.85,19.08,11.89l-12.87-12.78c3.95.65,7.03,2.62,11.47,3.02l-7.72-30.13c5.79,5.12,11.89,21.4,17.93,25.86l9.96-43.79c.83,13.81-2.85,36.45-.98,49.02l8.36-4.1c-.31.56-.51,1.03-1.15,1.93-.46.64-.86,1.02-1.35,1.62l-7.45,9.44c3.41-1.39,9.17-4.74,12.07-6.81l20.8-27.73c-.05-.39.17-.54.15-1l-23.09,14.15Z"/></svg>`
 };
 
-export const getPinSvgContent = (perfil?: string, ministerio?: string): string => {
-  const min = (ministerio || '').toLowerCase();
-  const perf = (perfil || '').toLowerCase();
+export const getPinSvgContent = (perfil?: string, ministerio?: string, nome?: string): string => {
+  const combined = `${perfil || ''} ${ministerio || ''} ${nome || ''}`.toLowerCase();
 
-  if (min.includes('homem') || perf.includes('homem')) return PINS_SVG_INLINE.homens;
-  if (min.includes('mulher') || perf.includes('mulher')) return PINS_SVG_INLINE.mulheres;
-  if (min.includes('hope') || perf.includes('casai') || perf.includes('casal')) return PINS_SVG_INLINE.hope;
-  if (min.includes('flamma') || perf.includes('joven') || perf.includes('jovem')) return PINS_SVG_INLINE.flamma;
-  if (min.includes('flick') || perf.includes('teen') || perf.includes('adolescente')) return PINS_SVG_INLINE.flick;
+  // 1. Homens (Forja / Homens de Atos)
+  if (combined.includes('homem') || combined.includes('forja')) {
+    return PINS_SVG_INLINE.homens;
+  }
+  // 2. Mulheres (Mulheres de Atitude / Celeiro)
+  if (combined.includes('mulher') || combined.includes('celeiro') || combined.includes('atitude')) {
+    return PINS_SVG_INLINE.mulheres;
+  }
+  // 3. Jovens (Flamma / Tocha / Fuego)
+  if (
+    combined.includes('flamma') ||
+    combined.includes('joven') ||
+    combined.includes('jovem') ||
+    combined.includes('tocha') ||
+    combined.includes('fuego')
+  ) {
+    return PINS_SVG_INLINE.flamma;
+  }
+  // 4. Adolescentes (Flick / Teens / Brasa / Fire)
+  if (
+    combined.includes('flick') ||
+    combined.includes('teen') ||
+    combined.includes('adolescente') ||
+    combined.includes('brasa') ||
+    combined.includes('fire')
+  ) {
+    return PINS_SVG_INLINE.flick;
+  }
+  // 5. Casais (Hope / Casais / Mista)
+  if (
+    combined.includes('hope') ||
+    combined.includes('casai') ||
+    combined.includes('casal') ||
+    combined.includes('mista') ||
+    combined.includes('misto')
+  ) {
+    return PINS_SVG_INLINE.hope;
+  }
   
-  return PINS_SVG_INLINE.hope;
+  return PINS_SVG_INLINE.homens;
 };
 
 // Gerador de ícone customizado SVG OFICIAL para pins de células (PIN GRÁFICO, SEM NOMES)
 const createCustomPinIcon = (celula: Celula, isSelected: boolean) => {
-  const svgMarkup = getPinSvgContent(celula.perfil, celula.ministerio);
+  const svgMarkup = getPinSvgContent(celula.perfil, celula.ministerio, celula.nome);
   const width = isSelected ? 42 : 36;
   const height = isSelected ? 57.5 : 49.25;
 
