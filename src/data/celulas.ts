@@ -158,13 +158,13 @@ export const CELULAS_SEED: Celula[] = [
     telefone: '(31) 98305-1984',
     dia: 'Segunda-feira',
     horario: '20:00',
-    endereco: 'Rua Belo Horizonte, 210',
-    bairro: 'Quitandinha (Cel. Fabriciano)',
-    cep: '35170-000',
+    endereco: 'Rua 58, 120',
+    bairro: 'Quitandinha',
+    cep: '35180-060',
     faixaEtaria: 'Casais',
     ativo: true,
     itinerante: false,
-    coords: { lat: -19.51909, lng: -42.61380 },
+    coords: { lat: -19.54005, lng: -42.63714 },
   },
 
   // ------------------------------------------------------------

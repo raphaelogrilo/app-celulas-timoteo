@@ -28,8 +28,8 @@ export const BAIRROS_TIMOTEO: BairroTimoteo[] = [
   },
   {
     nome: 'Quitandinha',
-    cepPadrao: '35170-000',
-    coords: { lat: -19.5250, lng: -42.6280 },
+    cepPadrao: '35180-060',
+    coords: { lat: -19.54005, lng: -42.63714 },
   },
   {
     nome: 'Rotativa',
