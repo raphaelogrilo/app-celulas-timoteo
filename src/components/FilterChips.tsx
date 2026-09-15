@@ -16,7 +16,7 @@ const PERFIS: { label: PerfilCelula; icon?: string; color: string }[] = [
   { label: 'Casais', color: 'bg-rose-600 text-white' },
   { label: 'Família', color: 'bg-blue-600 text-white' },
   { label: 'Mulheres', color: 'bg-pink-600 text-white' },
-  { label: 'Homens', color: 'bg-emerald-600 text-white' },
+  { label: 'Homens', color: 'bg-[#6D4C41] text-white' },
   { label: 'Teens', color: 'bg-amber-500 text-white' },
   { label: 'Misto', color: 'bg-slate-600 text-white' },
 ];

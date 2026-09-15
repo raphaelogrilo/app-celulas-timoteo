@@ -3,11 +3,11 @@ import type { Celula } from '../types/celula';
 // Lista Oficial das 13 Células da Igreja Atos Timóteo
 export const CELULAS_SEED: Celula[] = [
   // ------------------------------------------------------------
-  // 1. HOMENS DE ATOS (Perfil: Homens)
+  // 1. FORJA - HOMENS DE ATOS (Perfil: Homens)
   // ------------------------------------------------------------
   {
     id: 'cel-homens-1',
-    nome: 'Célula 1 · Homens de Atos',
+    nome: 'Forja 1 · Homens de Atos',
     perfil: 'Homens',
     lider: 'André e Lucas',
     telefone: '(31) 98667-1116',
@@ -22,7 +22,7 @@ export const CELULAS_SEED: Celula[] = [
   },
   {
     id: 'cel-homens-2',
-    nome: 'Célula 2 · Homens de Atos',
+    nome: 'Forja 2 · Homens de Atos',
     perfil: 'Homens',
     lider: 'Weldherson',
     telefone: '(31) 98869-5702',

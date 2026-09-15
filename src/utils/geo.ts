@@ -307,13 +307,13 @@ export function getProfileStyle(perfil: PerfilCelula | string): ProfileStyle {
       };
     case 'Homens':
       return {
-        bg: 'bg-emerald-50',
-        border: 'border-emerald-200',
-        text: 'text-emerald-700',
-        badgeBg: 'bg-emerald-600',
-        badgeText: 'text-white',
-        markerColor: '#059669',
-        pinBg: '#059669',
+        bg: 'bg-[#F7F3EE]',
+        border: 'border-[#D7CCC8]',
+        text: 'text-[#5D4037]',
+        badgeBg: 'bg-[#6D4C41]',
+        badgeText: 'text-white font-extrabold',
+        markerColor: '#6D4C41',
+        pinBg: '#6D4C41',
       };
     case 'Teens':
       return {
