@@ -32,9 +32,10 @@ const MapController: React.FC<{
         : selectedCelula.coords;
       if (c) map.flyTo([c.lat, c.lng], 16, { duration: 1.0, easeLinearity: 0.25 });
     } else if (targetCoords) {
+      const isCityCenter = Math.abs(targetCoords.lat - TIMOTEO_CENTER.lat) < 0.001;
       map.flyTo(
         [targetCoords.lat, targetCoords.lng],
-        15,
+        isCityCenter ? TIMOTEO_CENTER.zoom : 15,
         { duration: 1.0, easeLinearity: 0.25 }
       );
     }

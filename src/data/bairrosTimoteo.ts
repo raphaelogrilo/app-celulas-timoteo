@@ -126,7 +126,7 @@ export const IGREJA_ATOS_SEDE = {
 };
 
 export const TIMOTEO_CENTER = {
-  lat: -19.5900,
+  lat: -19.5635,
   lng: -42.6450,
-  zoom: 13.5,
+  zoom: 12.8,
 };
