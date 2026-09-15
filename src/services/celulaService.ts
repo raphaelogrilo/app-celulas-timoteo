@@ -60,13 +60,12 @@ function mapToRow(data: Partial<Celula>) {
 }
 
 /**
- * Escuta em tempo real todas as células ativas no Supabase.
+ * Escuta em tempo real todas as células ativas no Supabase (para o mapa público).
  * Retorna uma função de cancelamento da inscrição.
  */
 export function listenCelulas(
   callback: (celulas: Celula[]) => void
 ): () => void {
-  // 1. Busca inicial
   const fetchAll = async () => {
     const { data, error } = await supabase
       .from(TABELA)
@@ -80,9 +79,43 @@ export function listenCelulas(
 
   fetchAll();
 
-  // 2. Inscrição no canal Realtime
   const channel = supabase
     .channel('public_celulas_changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: TABELA },
+      () => {
+        fetchAll();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+/**
+ * Escuta em tempo real TODAS as células (ativas e inativas) para o Painel Geral Admin.
+ */
+export function listenAllCelulasAdmin(
+  callback: (celulas: Celula[]) => void
+): () => void {
+  const fetchAll = async () => {
+    const { data, error } = await supabase
+      .from(TABELA)
+      .select('*')
+      .order('criado_em', { ascending: false });
+
+    if (!error && data) {
+      callback(data.map(mapFromRow));
+    }
+  };
+
+  fetchAll();
+
+  const channel = supabase
+    .channel('admin_all_celulas_changes')
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: TABELA },

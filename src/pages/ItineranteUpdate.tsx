@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getCelulaByLiderEmailOrUid, updateEncontroAtual } from '../services/celulaService';
+import { getCelulaById, getCelulaByLiderEmailOrUid, updateEncontroAtual } from '../services/celulaService';
 import { fetchCepData } from '../utils/geo';
 import { BAIRROS_TIMOTEO } from '../data/bairrosTimoteo';
 import type { Celula } from '../types/celula';
@@ -30,8 +30,11 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function ItineranteUpdate() {
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const celulaIdParam = searchParams.get('id');
+
   const [celula, setCelula] = useState<Celula | null>(null);
   const [loadingCep, setLoadingCep] = useState(false);
   const [cepMsg, setCepMsg] = useState<string | null>(null);
@@ -48,13 +51,34 @@ export default function ItineranteUpdate() {
   });
 
   useEffect(() => {
-    if (!currentUser?.email && !currentUser?.id) return;
-    const identifier = currentUser.email || currentUser.id;
-    getCelulaByLiderEmailOrUid(identifier).then((c) => {
+    if (!currentUser) return;
+
+    const loadData = async () => {
+      let c: Celula | null = null;
+
+      if (celulaIdParam) {
+        c = await getCelulaById(celulaIdParam);
+      } else {
+        const identifier = currentUser.email || currentUser.id;
+        c = await getCelulaByLiderEmailOrUid(identifier);
+      }
+
       if (!c || !c.itinerante) {
+        navigate(isAdmin ? '/admin' : '/lider/dashboard');
+        return;
+      }
+
+      // Checagem de segurança
+      const isOwner =
+        c.liderEmail?.toLowerCase() === currentUser.email?.toLowerCase() ||
+        c.liderUid === currentUser.id;
+
+      if (!isAdmin && !isOwner) {
+        alert('Acesso negado: Você só pode atualizar a semana da sua própria célula.');
         navigate('/lider/dashboard');
         return;
       }
+
       setCelula(c);
 
       // Preenche com o encontroAtual existente
@@ -71,8 +95,10 @@ export default function ItineranteUpdate() {
         setValue('lat', e.coords.lat);
         setValue('lng', e.coords.lng);
       }
-    });
-  }, [currentUser]);
+    };
+
+    loadData();
+  }, [currentUser, celulaIdParam, isAdmin, navigate, setValue]);
 
   const handleCepBlur = async (cep: string) => {
     const digits = cep.replace(/\D/g, '');
@@ -116,7 +142,11 @@ export default function ItineranteUpdate() {
         dataReferencia: data.dataReferencia,
         coords: { lat: data.lat, lng: data.lng },
       });
-      navigate('/lider/dashboard');
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/lider/dashboard');
+      }
     } catch (err) {
       console.error(err);
       setSubmitError('Erro ao salvar. Verifique sua conexão.');

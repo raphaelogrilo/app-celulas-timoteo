@@ -2,19 +2,21 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   createCelula,
   updateCelula,
+  getCelulaById,
   getCelulaByLiderEmailOrUid,
 } from '../services/celulaService';
-import { vincularLiderCelula } from '../services/authService';
+import { vincularLiderCelula, getAllLideres } from '../services/authService';
 import { fetchCepData } from '../utils/geo';
 import { BAIRROS_TIMOTEO } from '../data/bairrosTimoteo';
+import type { LiderUser } from '../types/celula';
 import {
   ArrowLeft, Loader2, Save, AlertCircle, MapPin,
-  Users, Calendar, Clock, Phone, FileText, Info,
+  Users, Calendar, Clock, Phone, FileText, Info, Shield, Mail,
 } from 'lucide-react';
 
 const PERFIS = ['Jovens', 'Casais', 'Família', 'Homens', 'Mulheres', 'Teens', 'Misto'] as const;
@@ -30,6 +32,7 @@ const baseSchema = z.object({
   perfil: z.enum(PERFIS, { message: 'Selecione um perfil' }),
   lider: z.string().min(3, 'Informe o nome do líder'),
   telefone: z.string().min(10, 'Telefone inválido').max(15),
+  liderEmail: z.string().optional(),
   descricao: z.string().optional(),
   faixaEtaria: z.string().optional(),
   itinerante: z.boolean(),
@@ -60,12 +63,18 @@ interface CelulaFormProps {
 }
 
 export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const celulaIdParam = searchParams.get('id');
+
+  const [isLoadingData, setIsLoadingData] = useState(mode === 'edit' || !!celulaIdParam);
   const [isLoadingCep, setIsLoadingCep] = useState(false);
   const [cepFeedback, setCepFeedback] = useState<string | null>(null);
-  const [existingId, setExistingId] = useState<string | null>(null);
+  const [existingId, setExistingId] = useState<string | null>(celulaIdParam);
+  const [originalCelula, setOriginalCelula] = useState<any>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [lideresList, setLideresList] = useState<LiderUser[]>([]);
 
   const {
     register, handleSubmit, watch, setValue,
@@ -77,33 +86,68 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
 
   const isItinerante = watch('itinerante');
 
-  // Carrega dados existentes no modo edição
+  // Carrega lista de líderes se for admin
   useEffect(() => {
-    if (mode === 'edit' && currentUser) {
-      const identifier = currentUser.email || currentUser.id;
-      getCelulaByLiderEmailOrUid(identifier).then((celula) => {
-        if (!celula) return;
-        setExistingId(celula.id);
-        setValue('nome', celula.nome);
-        setValue('perfil', celula.perfil);
-        setValue('lider', celula.lider);
-        setValue('telefone', celula.telefone);
-        setValue('descricao', celula.descricao ?? '');
-        setValue('faixaEtaria', celula.faixaEtaria ?? '');
-        setValue('itinerante', celula.itinerante);
-        setValue('ativo', celula.ativo);
-        if (!celula.itinerante) {
-          setValue('dia', celula.dia ?? '');
-          setValue('horario', celula.horario ?? '');
-          setValue('cep', celula.cep ?? '');
-          setValue('endereco', celula.endereco ?? '');
-          setValue('bairro', celula.bairro ?? '');
-          setValue('pontoReferencia', celula.pontoReferencia ?? '');
-          if (celula.coords) setValue('coords', celula.coords);
-        }
-      });
+    if (isAdmin) {
+      getAllLideres().then(setLideresList);
     }
-  }, [mode, currentUser]);
+  }, [isAdmin]);
+
+  // Carrega dados existentes com checagem de permissão
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const loadData = async () => {
+      let celula = null;
+
+      if (celulaIdParam) {
+        celula = await getCelulaById(celulaIdParam);
+      } else if (mode === 'edit') {
+        const identifier = currentUser.email || currentUser.id;
+        celula = await getCelulaByLiderEmailOrUid(identifier);
+      }
+
+      if (!celula) {
+        setIsLoadingData(false);
+        return;
+      }
+
+      // Checagem de segurança: Se não for admin e a célula não pertencer a este líder, bloqueia
+      const isOwner =
+        celula.liderEmail?.toLowerCase() === currentUser.email?.toLowerCase() ||
+        celula.liderUid === currentUser.id;
+
+      if (!isAdmin && !isOwner) {
+        alert('Acesso negado: Você só pode editar as células vinculadas à sua liderança.');
+        navigate('/lider/dashboard');
+        return;
+      }
+
+      setExistingId(celula.id);
+      setOriginalCelula(celula);
+      setValue('nome', celula.nome);
+      setValue('perfil', celula.perfil);
+      setValue('lider', celula.lider);
+      setValue('telefone', celula.telefone);
+      setValue('liderEmail', celula.liderEmail ?? '');
+      setValue('descricao', celula.descricao ?? '');
+      setValue('faixaEtaria', celula.faixaEtaria ?? '');
+      setValue('itinerante', celula.itinerante);
+      setValue('ativo', celula.ativo);
+      if (!celula.itinerante) {
+        setValue('dia', celula.dia ?? '');
+        setValue('horario', celula.horario ?? '');
+        setValue('cep', celula.cep ?? '');
+        setValue('endereco', celula.endereco ?? '');
+        setValue('bairro', celula.bairro ?? '');
+        setValue('pontoReferencia', celula.pontoReferencia ?? '');
+        if (celula.coords) setValue('coords', celula.coords);
+      }
+      setIsLoadingData(false);
+    };
+
+    loadData();
+  }, [mode, celulaIdParam, currentUser, isAdmin, navigate, setValue]);
 
   // Busca de CEP automática
   const handleCepBlur = async (cepValue: string) => {
@@ -117,7 +161,6 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
       if (data.logradouro) setValue('endereco', data.logradouro);
       if (data.bairro) {
         setValue('bairro', data.bairro);
-        // Tenta encontrar coords do bairro de Timóteo
         const found = BAIRROS_TIMOTEO.find(
           b => b.nome.toLowerCase() === (data.bairro ?? '').toLowerCase()
         );
@@ -138,28 +181,55 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
     if (!currentUser) return;
     setSubmitError(null);
     try {
-      const payload = {
+      const payload: any = {
         ...data,
-        liderUid: currentUser.id,
-        liderEmail: currentUser.email ?? '',
         itinerante: data.itinerante,
         ativo: data.ativo ?? true,
-        // Para célula itinerante, limpa campos fixos
         ...(data.itinerante ? {
           dia: undefined, horario: undefined, cep: undefined,
           endereco: undefined, bairro: undefined, pontoReferencia: undefined, coords: undefined,
-          encontroAtual: undefined,
         } : {}),
       };
 
-      if (mode === 'edit' && existingId) {
-        await updateCelula(existingId, payload);
-      } else {
-        const id = await createCelula(payload);
-        await vincularLiderCelula(currentUser.email || currentUser.id, id);
+      // Determina o e-mail e UID do líder responsável
+      const targetLeaderEmail = isAdmin && data.liderEmail?.trim()
+        ? data.liderEmail.trim()
+        : (originalCelula?.liderEmail || currentUser.email || '');
+
+      const matchedLeader = lideresList.find(
+        (l) => l.email.toLowerCase() === targetLeaderEmail.toLowerCase()
+      );
+
+      payload.liderEmail = targetLeaderEmail;
+      if (matchedLeader) {
+        payload.liderUid = matchedLeader.userId || matchedLeader.id;
+      } else if (!isAdmin) {
+        payload.liderUid = currentUser.id;
+      } else if (originalCelula?.liderUid) {
+        payload.liderUid = originalCelula.liderUid;
       }
 
-      navigate('/lider/dashboard');
+      let celulaId = existingId;
+
+      if (existingId) {
+        if (originalCelula?.encontroAtual && data.itinerante) {
+          payload.encontroAtual = originalCelula.encontroAtual;
+        }
+        await updateCelula(existingId, payload);
+      } else {
+        celulaId = await createCelula(payload);
+      }
+
+      // Vincula a célula ao líder no banco de dados se houver e-mail
+      if (celulaId && targetLeaderEmail) {
+        await vincularLiderCelula(targetLeaderEmail, celulaId);
+      }
+
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/lider/dashboard');
+      }
     } catch (err: any) {
       console.error(err);
       setSubmitError('Erro ao salvar. Verifique sua conexão e tente novamente.');
@@ -177,11 +247,17 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
           <ArrowLeft className="w-4 h-4" />
         </button>
         <h1 className="text-sm font-bold text-white">
-          {mode === 'edit' ? 'Editar Célula' : 'Cadastrar Célula'}
+          {mode === 'edit' || celulaIdParam ? 'Editar Célula' : 'Cadastrar Célula'}
         </h1>
       </header>
 
-      <form onSubmit={handleSubmit(onSubmit as any)} className="max-w-lg mx-auto px-4 py-6 space-y-6" noValidate>
+      {isLoadingData ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400">
+          <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
+          <p className="text-xs">Carregando dados da célula...</p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit(onSubmit as any)} className="max-w-lg mx-auto px-4 py-6 space-y-6" noValidate>
 
         {/* Nome */}
         <div>
@@ -203,7 +279,7 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
         {/* Líder e Telefone */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className={LABEL_CLASS}>Líder</label>
+            <label className={LABEL_CLASS}>Nome do Líder</label>
             <input {...register('lider')} className={FIELD_CLASS} placeholder="Nome do líder" />
             {errors.lider && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.lider.message}</p>}
           </div>
@@ -213,6 +289,56 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
             {errors.telefone && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.telefone.message}</p>}
           </div>
         </div>
+
+        {/* E-mail do Líder (Controle Admin de Vínculo) */}
+        {isAdmin && (
+          <div className="p-4 rounded-2xl bg-brand-500/10 border border-brand-500/20 space-y-3">
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-brand-400" />
+              <div className="text-xs font-bold text-brand-300 uppercase tracking-wider">
+                Vínculo de Acesso do Líder (Exclusivo Admin)
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-300">
+              Associe esta célula ao e-mail Google de um líder cadastrado para que ele possa gerenciá-la pelo painel:
+            </p>
+            {lideresList.length > 0 && (
+              <div>
+                <label className={LABEL_CLASS}>Selecionar Líder Autorizado</label>
+                <select
+                  onChange={(e) => {
+                    const sel = lideresList.find((l) => l.email === e.target.value);
+                    if (sel) {
+                      setValue('liderEmail', sel.email);
+                      if (!watch('lider')) setValue('lider', sel.nome);
+                    }
+                  }}
+                  className={FIELD_CLASS + ' appearance-none'}
+                  defaultValue=""
+                >
+                  <option value="">Selecione para preencher automaticamente...</option>
+                  {lideresList.map((l) => (
+                    <option key={l.id || l.email} value={l.email}>
+                      {l.nome} ({l.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div>
+              <label className={LABEL_CLASS}>
+                <Mail className="inline w-3.5 h-3.5 mr-1" />
+                E-mail Google do Líder Responsável
+              </label>
+              <input
+                {...register('liderEmail')}
+                className={FIELD_CLASS}
+                placeholder="lider@gmail.com"
+                type="email"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Descrição e Faixa Etária */}
         <div>
@@ -332,7 +458,8 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
             <><Save className="w-4 h-4" /> {mode === 'edit' ? 'Salvar Alterações' : 'Cadastrar Célula'}</>
           )}
         </button>
-      </form>
+        </form>
+      )}
     </div>
   );
 }

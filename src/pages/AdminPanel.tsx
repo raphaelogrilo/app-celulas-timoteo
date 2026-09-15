@@ -2,14 +2,15 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllLideres, createLider, deleteLider } from '../services/authService';
-import { listenCelulas, toggleCelulaAtivo, deleteCelula } from '../services/celulaService';
+import { listenAllCelulasAdmin, toggleCelulaAtivo, deleteCelula } from '../services/celulaService';
 import type { LiderUser, Celula } from '../types/celula';
 import {
   Users, Plus, Trash2, Power, PowerOff, Loader2, AlertCircle,
   ArrowLeft, Shield, MapPin, ChevronDown, ChevronUp, CheckCircle,
+  Edit3, RefreshCw,
 } from 'lucide-react';
 
 const newLiderSchema = z.object({
@@ -52,7 +53,7 @@ export default function AdminPanel() {
       setLoadingData(false);
     });
 
-    const unsub = listenCelulas((data) => setCelulas(data));
+    const unsub = listenAllCelulasAdmin((data) => setCelulas(data));
     return () => unsub();
   }, []);
 
@@ -254,66 +255,111 @@ export default function AdminPanel() {
 
             {/* ===== Seção Células ===== */}
             <section>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-3">
-                <MapPin className="w-3.5 h-3.5" /> Todas as Células ({celulas.length})
-              </h2>
-              <div className="space-y-2">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5" /> Todas as Células ({celulas.length})
+                </h2>
+                <Link
+                  to="/lider/cadastro"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition-all shadow-sm active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Nova Célula
+                </Link>
+              </div>
+
+              <div className="space-y-2.5">
                 {celulas.length === 0 ? (
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center text-xs text-slate-400">
                     Nenhuma célula cadastrada no banco.
                   </div>
                 ) : (
-                  celulas.map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10"
-                    >
-                      <div>
-                        <div className="text-sm font-bold text-white flex items-center gap-1.5">
-                          {c.nome}
-                          {c.itinerante && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
-                              Itinerante
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-slate-400">
-                          {c.perfil} · Líder: {c.lider}
-                        </div>
-                        <div
-                          className={`text-[10px] mt-0.5 ${
-                            c.ativo ? 'text-emerald-400' : 'text-red-400'
-                          }`}
-                        >
-                          {c.ativo ? '● Ativa' : '● Inativa'}
+                  celulas.map((c) => {
+                    const dia = c.itinerante ? c.encontroAtual?.dia : c.dia;
+                    const horario = c.itinerante ? c.encontroAtual?.horario : c.horario;
+                    const bairro = c.itinerante ? c.encontroAtual?.bairro : c.bairro;
+
+                    return (
+                      <div
+                        key={c.id}
+                        className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-3"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="text-sm font-bold text-white flex items-center gap-1.5">
+                              {c.nome}
+                              {c.itinerante && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
+                                  Itinerante
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-400 mt-0.5">
+                              {c.perfil} · Líder: <strong className="text-slate-300">{c.lider}</strong> ({c.telefone})
+                            </div>
+                            <div className="text-[11px] text-slate-400 mt-0.5">
+                              📍 Bairro {bairro} · {dia} às {horario}
+                            </div>
+                            <div
+                              className={`text-[10px] font-bold mt-1 ${
+                                c.ativo ? 'text-emerald-400' : 'text-red-400'
+                              }`}
+                            >
+                              {c.ativo ? '● Ativa e visível no mapa' : '● Inativa (oculta do mapa)'}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            {/* Editar dados completos da célula */}
+                            <Link
+                              to={`/lider/editar?id=${c.id}`}
+                              title="Editar todos os dados da célula"
+                              className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </Link>
+
+                            {/* Se for itinerante, botão rápido para atualizar semana */}
+                            {c.itinerante && (
+                              <Link
+                                to={`/lider/itinerante?id=${c.id}`}
+                                title="Atualizar endereço da semana"
+                                className="w-8 h-8 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 flex items-center justify-center transition-colors"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5" />
+                              </Link>
+                            )}
+
+                            {/* Ativar / Inativar */}
+                            <button
+                              onClick={() => toggleCelulaAtivo(c.id, !c.ativo)}
+                              title={c.ativo ? 'Inativar célula' : 'Ativar célula'}
+                              className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
+                                c.ativo
+                                  ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                                  : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                              }`}
+                            >
+                              {c.ativo ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
+                            </button>
+
+                            {/* Excluir permanentemente */}
+                            <button
+                              onClick={async () => {
+                                if (confirm(`Excluir permanentemente a célula "${c.nome}"?`)) {
+                                  await deleteCelula(c.id);
+                                }
+                              }}
+                              title="Excluir permanentemente"
+                              className="w-8 h-8 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 flex items-center justify-center transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => toggleCelulaAtivo(c.id, !c.ativo)}
-                          title={c.ativo ? 'Inativar' : 'Ativar'}
-                          className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
-                            c.ativo
-                              ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                              : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                          }`}
-                        >
-                          {c.ativo ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
-                        </button>
-                        <button
-                          onClick={async () => {
-                            if (confirm(`Excluir permanentemente "${c.nome}"?`)) {
-                              await deleteCelula(c.id);
-                            }
-                          }}
-                          title="Excluir célula"
-                          className="w-8 h-8 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 flex items-center justify-center transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </section>
