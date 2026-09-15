@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Compass, AlertCircle, Loader2, LogOut } from 'lucide-react';
 
+import { AtosLogo } from '../components/AtosLogo';
+
 export default function LeaderLogin() {
   const { currentUser, isAuthorized, unauthorizedEmail, loading, loginGoogle, logout } = useAuth();
   const navigate = useNavigate();
@@ -28,17 +30,17 @@ export default function LeaderLogin() {
   };
 
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-slate-950 via-slate-900 to-brand-950 flex flex-col items-center justify-center p-4">
-      {/* Logo & Título */}
-      <div className="w-full max-w-sm mb-8 text-center">
-        <div className="inline-flex w-16 h-16 rounded-3xl bg-gradient-to-tr from-brand-600 to-brand-400 items-center justify-center shadow-xl shadow-brand-500/30 mb-4">
-          <Compass className="w-8 h-8 text-white" />
+    <div className="min-h-dvh bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4">
+      {/* Logo da Igreja Atos & Título */}
+      <div className="w-full max-w-sm mb-8 text-center flex flex-col items-center">
+        <div className="mb-3">
+          <AtosLogo size="lg" showText={true} textColor="white" />
         </div>
-        <h1 className="text-2xl font-extrabold text-white tracking-tight">
-          Área do Líder
+        <h1 className="text-xl font-extrabold text-white tracking-tight mt-1">
+          Área do Líder de Célula
         </h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Acesse para gerenciar sua célula em Timóteo
+        <p className="text-xs text-slate-400 mt-1">
+          Igreja Atos · Gestão de Células Timóteo - MG
         </p>
       </div>
 

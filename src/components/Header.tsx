@@ -1,5 +1,6 @@
 import React from 'react';
-import { MapPin, Info, Compass, Loader2 } from 'lucide-react';
+import { MapPin, Info, Loader2 } from 'lucide-react';
+import { AtosLogo } from './AtosLogo';
 
 interface HeaderProps {
   totalCelulas: number;
@@ -15,19 +16,17 @@ export const Header: React.FC<HeaderProps> = ({
   loading = false,
 }) => {
   return (
-    <header className="relative z-30 pt-[calc(var(--sat)+10px)] pb-2.5 px-4 bg-gradient-to-b from-slate-950/90 via-slate-900/80 to-transparent backdrop-blur-md">
+    <header className="relative z-30 pt-[calc(var(--sat)+10px)] pb-2.5 px-4 bg-gradient-to-b from-slate-950/95 via-slate-900/85 to-transparent backdrop-blur-md">
       <div className="max-w-md mx-auto flex items-center justify-between">
-        {/* Logo & Cidade */}
+        {/* Logo da Igreja Atos & Cidade */}
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center shadow-lg shadow-brand-500/25 border border-white/20">
-            <Compass className="w-5 h-5 text-white animate-spin-slow" />
-          </div>
-          <div>
+          <AtosLogo size="md" showText={true} textColor="white" />
+          <div className="border-l border-white/20 pl-2.5 ml-0.5">
             <div className="flex items-center gap-1.5">
-              <h1 className="text-base font-bold tracking-tight text-white flex items-center gap-1">
-                Células <span className="text-brand-400 font-extrabold">Timóteo</span>
+              <h1 className="text-xs font-bold tracking-tight text-white flex items-center gap-1">
+                Células <span className="text-[#FAAB36] font-extrabold">Timóteo</span>
               </h1>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-brand-500/20 text-brand-300 border border-brand-400/30">
+              <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-[#FAAB36]/20 text-[#FAAB36] border border-[#FAAB36]/30">
                 MG
               </span>
             </div>
