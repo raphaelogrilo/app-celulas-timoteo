@@ -60,7 +60,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
               <Sparkles className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
               <div>
                 <strong className="text-xs font-bold text-slate-800 block">Perfis Variados</strong>
-                <span className="text-[11px] text-slate-500">Temos células para Jovens, Casais, Famílias, Homens, Mulheres e Teens.</span>
+                <span className="text-[11px] text-slate-500">Temos células para Homens, Mulheres, Casais, Jovens e Adolescentes.</span>
               </div>
             </div>
 

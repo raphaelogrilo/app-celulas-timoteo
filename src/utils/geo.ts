@@ -305,6 +305,7 @@ export function getProfileStyle(perfil: PerfilCelula | string): ProfileStyle {
         markerColor: '#CB3F1C',
         pinBg: '#CB3F1C',
       };
+    case 'Adolescentes':
     case 'Teens':
       return {
         bg: 'bg-[#FDF2F3]',

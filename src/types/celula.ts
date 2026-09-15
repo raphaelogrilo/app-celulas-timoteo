@@ -1,12 +1,10 @@
 export type PerfilCelula = 
   | 'Todos'
-  | 'Jovens'
-  | 'Casais'
-  | 'Família'
   | 'Homens'
   | 'Mulheres'
-  | 'Teens'
-  | 'Misto';
+  | 'Casais'
+  | 'Jovens'
+  | 'Adolescentes';
 
 export type DiaSemana = 
   | 'Todos'
@@ -52,7 +50,7 @@ export interface EncontroAtual {
 export interface Celula {
   id: string;
   nome: string;
-  perfil: 'Jovens' | 'Casais' | 'Família' | 'Homens' | 'Mulheres' | 'Teens' | 'Misto';
+  perfil: 'Homens' | 'Mulheres' | 'Casais' | 'Jovens' | 'Adolescentes' | string;
   ministerio?: string;
   lider: string;
   telefone: string;

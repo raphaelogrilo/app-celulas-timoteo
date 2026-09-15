@@ -25,8 +25,7 @@ export const MINISTERIOS_OPCOES = [
   { valor: 'Mulheres de Atitude', perfil: 'Mulheres', label: 'Mulheres de Atitude' },
   { valor: 'Ministério Hope (Casais)', perfil: 'Casais', label: 'Ministério Hope (Casais)' },
   { valor: 'Ministério Flamma (Jovens)', perfil: 'Jovens', label: 'Ministério Flamma (Jovens)' },
-  { valor: 'Ministério Flick (Adolescentes)', perfil: 'Teens', label: 'Ministério Flick (Adolescentes)' },
-  { valor: 'Família', perfil: 'Família', label: 'Família' },
+  { valor: 'Ministério Flick (Adolescentes)', perfil: 'Adolescentes', label: 'Ministério Flick (Adolescentes)' },
 ] as const;
 
 const DIAS = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'] as const;

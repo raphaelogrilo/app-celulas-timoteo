@@ -54,7 +54,24 @@ export default function PublicMap() {
   const filteredCelulas = useMemo(() => {
     return allCelulas
       .filter((celula) => {
-        if (selectedPerfil !== 'Todos' && celula.perfil !== selectedPerfil) return false;
+        if (selectedPerfil !== 'Todos') {
+          const perf = (celula.perfil || '').toLowerCase();
+          const min = (celula.ministerio || '').toLowerCase();
+
+          if (selectedPerfil === 'Homens') {
+            if (perf !== 'homens' && !min.includes('homem')) return false;
+          } else if (selectedPerfil === 'Mulheres') {
+            if (perf !== 'mulheres' && !min.includes('mulher')) return false;
+          } else if (selectedPerfil === 'Casais') {
+            if (perf !== 'casais' && !min.includes('hope') && !min.includes('casai') && !min.includes('casal')) return false;
+          } else if (selectedPerfil === 'Jovens') {
+            if (perf !== 'jovens' && !min.includes('flamma') && !min.includes('joven') && !min.includes('jovem')) return false;
+          } else if (selectedPerfil === 'Adolescentes') {
+            if (perf !== 'adolescentes' && perf !== 'teens' && !min.includes('flick') && !min.includes('teen') && !min.includes('adolescente')) return false;
+          } else {
+            if (celula.perfil !== selectedPerfil) return false;
+          }
+        }
 
         // Para filtro de dia: célula fixa usa celula.dia, itinerante usa encontroAtual.dia
         const diaEfetivo = celula.itinerante ? celula.encontroAtual?.dia : celula.dia;

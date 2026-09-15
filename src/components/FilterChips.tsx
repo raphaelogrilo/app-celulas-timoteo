@@ -16,9 +16,7 @@ const PERFIS: { label: PerfilCelula; icon?: string; color: string }[] = [
   { label: 'Mulheres', color: 'bg-[#B14468] text-white' },
   { label: 'Casais', color: 'bg-[#C69248] text-slate-950 font-extrabold' },
   { label: 'Jovens', color: 'bg-[#CB3F1C] text-white' },
-  { label: 'Teens', color: 'bg-[#8C111D] text-white' },
-  { label: 'Família', color: 'bg-blue-600 text-white' },
-  { label: 'Misto', color: 'bg-slate-600 text-white' },
+  { label: 'Adolescentes', color: 'bg-[#8C111D] text-white' },
 ];
 
 const DIAS: { label: DiaSemana; short: string }[] = [
