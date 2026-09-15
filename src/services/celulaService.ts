@@ -169,17 +169,25 @@ export async function getCelulaById(id: string): Promise<Celula | null> {
   return mapFromRow(data);
 }
 
+const isUUID = (str: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str.trim());
+
 /**
  * Busca a célula principal vinculada a um líder pelo e-mail ou UID.
  */
 export async function getCelulaByLiderEmailOrUid(
   emailOrUid: string
 ): Promise<Celula | null> {
-  const { data, error } = await supabase
-    .from(TABELA)
-    .select('*')
-    .or(`lider_email.ilike.${emailOrUid},lider_user_id.eq.${emailOrUid}`)
-    .maybeSingle();
+  const clean = emailOrUid.trim();
+  let query = supabase.from(TABELA).select('*');
+
+  if (isUUID(clean)) {
+    query = query.or(`lider_user_id.eq.${clean},lider_id.eq.${clean}`);
+  } else {
+    query = query.ilike('lider_email', clean);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error || !data) return null;
   return mapFromRow(data);
@@ -191,11 +199,16 @@ export async function getCelulaByLiderEmailOrUid(
 export async function getCelulasByLiderEmailOrUid(
   emailOrUid: string
 ): Promise<Celula[]> {
-  const { data, error } = await supabase
-    .from(TABELA)
-    .select('*')
-    .or(`lider_email.ilike.${emailOrUid},lider_user_id.eq.${emailOrUid}`)
-    .order('criado_em', { ascending: false });
+  const clean = emailOrUid.trim();
+  let query = supabase.from(TABELA).select('*');
+
+  if (isUUID(clean)) {
+    query = query.or(`lider_user_id.eq.${clean},lider_id.eq.${clean}`);
+  } else {
+    query = query.ilike('lider_email', clean);
+  }
+
+  const { data, error } = await query.order('criado_em', { ascending: false });
 
   if (error || !data) return [];
   return data.map(mapFromRow);

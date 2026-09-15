@@ -144,8 +144,12 @@ export async function vincularLiderCelula(
   liderIdOrEmail: string,
   celulaId: string
 ): Promise<void> {
-  await supabase
-    .from('lideres')
-    .update({ celula_id: celulaId })
-    .or(`id.eq.${liderIdOrEmail},email.ilike.${liderIdOrEmail}`);
+  const clean = liderIdOrEmail.trim();
+  const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean);
+
+  if (isId) {
+    await supabase.from('lideres').update({ celula_id: celulaId }).eq('id', clean);
+  } else {
+    await supabase.from('lideres').update({ celula_id: celulaId }).ilike('email', clean);
+  }
 }
