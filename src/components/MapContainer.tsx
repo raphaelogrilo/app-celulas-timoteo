@@ -197,19 +197,11 @@ export const MapContainer: React.FC<MapViewProps> = ({
           if (ref) mapRef.current = ref;
         }}
       >
-        {/* Esri ArcGIS World Imagery (Satélite de alta definição) */}
+        {/* OpenStreetMap - 100% gratuito, sem API key */}
         <TileLayer
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          maxNativeZoom={18}
-          maxZoom={20}
-          attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
-        />
-
-        {/* Camada de Ruas, Nomes e Lugares (Esri Reference Overlay) */}
-        <TileLayer
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-          maxNativeZoom={18}
-          maxZoom={20}
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
 
         <MapController

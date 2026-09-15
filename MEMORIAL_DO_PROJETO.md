@@ -19,9 +19,7 @@ O **App de Células Timóteo** é uma Progressive Web Application (PWA) e plataf
 
 * **Frontend:** React 19 + TypeScript + Vite 8
 * **Estilização & Design:** TailwindCSS v4 + CSS Tokens customizados (Dark Mode imersivo, Glassmorphism, Mobile-first Viewport Locked `100dvh`)
-* **Animações e Micro-interações:** Framer Motion + Lucide React Icons
-* **Mapas & GIS:** React-Leaflet + Leaflet 1.9 + **Esri ArcGIS World Imagery (Satélite de Alta Resolução)** + **Esri Reference Overlay (Ruas e Bairros)** com interpolação de zoom suave (`maxNativeZoom={18}`, `maxZoom={20}`)
-* **Backend & Banco de Dados:** **Supabase (PostgreSQL 15)**
+* **Mapas & GIS:** React-Leaflet + Leaflet 1.9 + **OpenStreetMap (Padrão Vetorial Limpo)**
   * Autenticação via **Google OAuth 2.0**
   * **Supabase Realtime (WebSockets)** para sincronização instantânea de células e status
   * **Row Level Security (RLS)** para proteção de dados e permissões
@@ -92,6 +90,20 @@ O **App de Células Timóteo** é uma Progressive Web Application (PWA) e plataf
 * Correção de tipagem UUID no Supabase para busca de líderes por e-mail.
 * Ajustes de scroll natural e usabilidade para Desktop (PC) e Mobile.
 
+### Fase 11: Gestão de Membros e Sistema de Chamada com Pontualidade
+* **Módulo de Cadastro de Membros (`/lider/membros`):**
+  * Cadastro de Nome, Data de Aniversário, Endereço e WhatsApp.
+  * Destaque automático para aniversariantes do mês atual.
+  * Botão de conversa direta no WhatsApp com mensagem de boas-vindas/parabéns pré-formatada.
+  * Controle de status (Ativo/Inativo) e exclusão.
+* **Módulo de Chamada e Frequência do Encontro (`/lider/chamada`):**
+  * Carregamento automático dos membros cadastrados na célula.
+  * Registro de presença e ausência com 1 toque.
+  * **Nível de Pontualidade:** escala graduada em passos de 5 em 5 minutos (`0 min (Pontual)`, `+5m`, `+10m`, `+15m`, ... até `+60m ou mais`).
+  * **Sessão de Visitantes:** registro dedicado de visitantes com Nome, WhatsApp, indicação de qual membro o convidou e horário de chegada/pontualidade.
+  * Contadores em tempo real (Presentes, Faltas, Visitantes, Total Geral).
+  * Histórico de reuniões anteriores com detalhamento individual e relatórios.
+
 ---
 
 ## 📁 4. Estrutura de Pastas e Arquivos Principais
@@ -116,21 +128,26 @@ app-celulas-timoteo/
 │   ├── pages/
 │   │   ├── AdminPanel.tsx      # Painel Geral do Administrador
 │   │   ├── CelulaForm.tsx      # Formulário de Criação/Edição (Fixa e Itinerante)
+│   │   ├── ChamadaEncontro.tsx # Chamada com pontualidade de 5 em 5 min e visitantes
 │   │   ├── ItineranteUpdate.tsx# Atualização rápida semanal de endereço
 │   │   ├── LeaderDashboard.tsx # Painel do Líder Comum (Multi-células)
 │   │   ├── LeaderLogin.tsx     # Tela de login Google com orientações
+│   │   ├── MembrosGestao.tsx   # Gestão e cadastro de membros da célula
 │   │   └── PublicMap.tsx       # Tela principal do mapa público
 │   ├── services/
 │   │   ├── authService.ts      # Funções de login, líderes e permissões
-│   │   └── celulaService.ts    # CRUD e Realtime das células no Supabase
+│   │   ├── celulaService.ts    # CRUD e Realtime das células no Supabase
+│   │   └── membroService.ts    # Gestão de membros e histórico de chamadas
 │   ├── types/
-│   │   └── celula.ts           # Definições TypeScript (Celula, EncontroAtual, LocalItinerante)
+│   │   ├── celula.ts           # Definições TypeScript (Celula, EncontroAtual, LocalItinerante)
+│   │   └── membro.ts           # Definições TypeScript (MembroCelula, ChamadaCelula, Presenca)
 │   ├── utils/
 │   │   └── geo.ts              # Funções de cálculo de distância e busca de CEP
 │   ├── index.css               # Design System TailwindCSS v4
 │   └── main.tsx                # Roteador principal do React Router
 ├── supabase/
-│   └── schema.sql              # Script SQL completo de tabelas, índices e RLS
+│   ├── schema.sql              # Script SQL base de tabelas, índices e RLS
+│   └── schema_membros_chamadas.sql # Script SQL para membros e chamadas
 ├── .env                        # Chaves de API do Supabase
 ├── package.json                # Dependências e scripts
 └── MEMORIAL_DO_PROJETO.md      # Este arquivo memorial
@@ -162,6 +179,26 @@ app-celulas-timoteo/
 * `lat`, `lng` (DOUBLE PRECISION)
 * `encontro_atual` (JSONB) — Objeto com rota, locais pré-cadastrados e endereço da semana
 * `lider_email` (TEXT), `lider_user_id` (UUID)
+
+### Tabela `public.membros_celula`
+* `id` (UUID, PK)
+* `celula_id` (UUID, FK public.celulas)
+* `nome` (TEXT)
+* `data_aniversario` (TEXT)
+* `endereco` (TEXT)
+* `whatsapp` (TEXT)
+* `ativo` (BOOLEAN)
+* `criado_em`, `atualizado_em` (TIMESTAMPTZ)
+
+### Tabela `public.chamadas_celula`
+* `id` (UUID, PK)
+* `celula_id` (UUID, FK public.celulas)
+* `data_encontro` (DATE)
+* `tema` (TEXT), `observacoes` (TEXT)
+* `presencas` (JSONB) — Array de presenças com pontualidade em passos de 5 em 5 minutos
+* `visitantes` (JSONB) — Array de visitantes com WhatsApp, quem convidou e pontualidade
+* `total_presentes`, `total_faltas`, `total_visitantes` (INTEGER)
+* `criado_em`, `atualizado_em` (TIMESTAMPTZ)
 
 ---
 

@@ -8,6 +8,8 @@ import LeaderLogin from './pages/LeaderLogin';
 import LeaderDashboard from './pages/LeaderDashboard';
 import CelulaForm from './pages/CelulaForm';
 import ItineranteUpdate from './pages/ItineranteUpdate';
+import MembrosGestao from './pages/MembrosGestao';
+import ChamadaEncontro from './pages/ChamadaEncontro';
 import AdminPanel from './pages/AdminPanel';
 import './index.css';
 
@@ -29,6 +31,24 @@ createRoot(document.getElementById('root')!).render(
             element={
               <PrivateRoute>
                 <LeaderDashboard />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/lider/membros"
+            element={
+              <PrivateRoute>
+                <MembrosGestao />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/lider/chamada"
+            element={
+              <PrivateRoute>
+                <ChamadaEncontro />
               </PrivateRoute>
             }
           />

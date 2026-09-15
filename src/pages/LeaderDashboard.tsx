@@ -11,6 +11,7 @@ import {
   LogOut, MapPin, Calendar, Phone, Edit3,
   RefreshCw, PlusCircle, Compass,
   Users, Navigation, Search, Power,
+  ClipboardCheck,
 } from 'lucide-react';
 
 export default function LeaderDashboard() {
@@ -270,24 +271,46 @@ export default function LeaderDashboard() {
                     </div>
 
                     {/* Botões de Ação do Card */}
-                    <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row gap-2">
-                      <Link
-                        to={`/lider/editar?id=${c.id}`}
-                        className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <Edit3 className="w-3.5 h-3.5 text-brand-400" />
-                        Editar Informações
-                      </Link>
-
-                      {c.itinerante && (
+                    <div className="pt-3 border-t border-white/10 space-y-2">
+                      {/* Ações de Gestão de Encontros e Pessoas */}
+                      <div className="grid grid-cols-2 gap-2">
                         <Link
-                          to={`/lider/itinerante?id=${c.id}`}
-                          className="flex-1 py-2.5 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                          to={`/lider/chamada?celulaId=${c.id}`}
+                          className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-md shadow-emerald-600/20 active:scale-95"
                         >
-                          <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
-                          Atualizar Semana
+                          <ClipboardCheck className="w-3.5 h-3.5" />
+                          Fazer Chamada
                         </Link>
-                      )}
+
+                        <Link
+                          to={`/lider/membros?celulaId=${c.id}`}
+                          className="py-2.5 px-3 rounded-xl bg-brand-600/20 hover:bg-brand-600/30 border border-brand-500/30 text-brand-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors active:scale-95"
+                        >
+                          <Users className="w-3.5 h-3.5 text-brand-400" />
+                          Membros
+                        </Link>
+                      </div>
+
+                      {/* Ações de Edição e Configuração */}
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Link
+                          to={`/lider/editar?id=${c.id}`}
+                          className="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-slate-400" />
+                          Editar Dados
+                        </Link>
+
+                        {c.itinerante && (
+                          <Link
+                            to={`/lider/itinerante?id=${c.id}`}
+                            className="flex-1 py-2 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                            Atualizar Semana
+                          </Link>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
