@@ -115,12 +115,12 @@ export const BAIRROS_TIMOTEO: BairroTimoteo[] = [
 
 export const IGREJA_ATOS_SEDE = {
   nome: 'Igreja Atos · Sede',
-  endereco: 'Rua 95, nº 6F',
-  enderecoCompleto: 'Rua: 95, nº 6F - João XXIII, Timóteo - MG (CEP 35180-368)',
+  endereco: 'Rua 95',
+  enderecoCompleto: 'Rua 95 – João XXIII, Timóteo - MG',
   bairro: 'João XXIII',
-  cep: '35180-368',
+  cep: '35182-394',
   cidade: 'Timóteo - MG',
-  coords: { lat: -19.5930, lng: -42.6470 },
+  coords: { lat: -19.55409, lng: -42.64819 },
   cultos: 'Domingo às 10h e 18h · Quarta às 19h30',
   telefone: '(31) 99871-1000',
 };
