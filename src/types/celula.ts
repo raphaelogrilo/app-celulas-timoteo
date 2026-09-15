@@ -27,7 +27,7 @@ export interface EncontroAtual {
   dia: DiaSemana | string;
   horario: string;
   cep: string;
-  endereco: string;
+  endereco?: string;
   bairro: string;
   pontoReferencia?: string;
   coords: Coords;

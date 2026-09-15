@@ -18,7 +18,7 @@ const schema = z.object({
   dia: z.string().min(1, 'Selecione o dia'),
   horario: z.string().min(1, 'Informe o horário'),
   cep: z.string().min(8, 'CEP inválido'),
-  endereco: z.string().min(5, 'Informe o endereço'),
+  endereco: z.string().optional(),
   bairro: z.string().min(2, 'Informe o bairro'),
   pontoReferencia: z.string().optional(),
   observacao: z.string().optional(),
@@ -247,26 +247,12 @@ export default function ItineranteUpdate() {
           </div>
         </div>
 
-        {/* Endereço e Bairro */}
+        {/* Bairro e Observação */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className={LABEL_CLASS}>Endereço Completo</label>
-            <input {...register('endereco')} className={FIELD_CLASS} placeholder="Rua, número" />
-            {errors.endereco && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.endereco.message}</p>}
-          </div>
-
           <div>
             <label className={LABEL_CLASS}>Bairro</label>
             <input {...register('bairro')} className={FIELD_CLASS} placeholder="Ex: Funcionários" />
             {errors.bairro && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.bairro.message}</p>}
-          </div>
-        </div>
-
-        {/* Ponto de Referência e Observação */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className={LABEL_CLASS}>Ponto de Referência</label>
-            <input {...register('pontoReferencia')} className={FIELD_CLASS} placeholder="Ex: Casa com portão azul..." />
           </div>
 
           <div>

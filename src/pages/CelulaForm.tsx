@@ -51,7 +51,6 @@ const baseSchema = z.object({
     if (!data.dia) ctx.addIssue({ code: 'custom', path: ['dia'], message: 'Selecione o dia do encontro' });
     if (!data.horario) ctx.addIssue({ code: 'custom', path: ['horario'], message: 'Informe o horário' });
     if (!data.cep) ctx.addIssue({ code: 'custom', path: ['cep'], message: 'Informe o CEP' });
-    if (!data.endereco) ctx.addIssue({ code: 'custom', path: ['endereco'], message: 'Informe o endereço' });
     if (!data.bairro) ctx.addIssue({ code: 'custom', path: ['bairro'], message: 'Informe o bairro' });
   }
 });
@@ -448,20 +447,6 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
                 <label className={LABEL_CLASS}>Bairro</label>
                 <input {...register('bairro')} className={FIELD_CLASS} placeholder="Ex: Funcionários" />
                 {errors.bairro && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.bairro.message}</p>}
-              </div>
-            </div>
-
-            {/* Endereço e Ponto de Referência */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className={LABEL_CLASS}>Endereço Completo</label>
-                <input {...register('endereco')} className={FIELD_CLASS} placeholder="Rua, número" />
-                {errors.endereco && <p className={ERROR_CLASS}><AlertCircle className="w-3 h-3" />{errors.endereco.message}</p>}
-              </div>
-
-              <div>
-                <label className={LABEL_CLASS}>Ponto de Referência</label>
-                <input {...register('pontoReferencia')} className={FIELD_CLASS} placeholder="Ex: Perto da padaria..." />
               </div>
             </div>
           </div>
