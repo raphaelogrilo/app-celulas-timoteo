@@ -200,14 +200,16 @@ export const MapContainer: React.FC<MapViewProps> = ({
         {/* Esri ArcGIS World Imagery (Satélite de alta definição) */}
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          maxZoom={19}
+          maxNativeZoom={18}
+          maxZoom={20}
           attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
         />
 
         {/* Camada de Ruas, Nomes e Lugares (Esri Reference Overlay) */}
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-          maxZoom={19}
+          maxNativeZoom={18}
+          maxZoom={20}
         />
 
         <MapController
