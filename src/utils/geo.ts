@@ -51,6 +51,82 @@ export async function fetchCepData(cepInput: string): Promise<{
 }
 
 /**
+ * Normaliza e formata um endereço digitado pelo usuário para o padrão Google Maps:
+ * Ex: "r. oito de novembro, 5 - centro" -> "Rua Oito de Novembro, 5"
+ * Ex: "av. castelo branco 300" -> "Avenida Castelo Branco, 300"
+ * Ex: "rua 31 de marco 240" -> "Rua 31 de Março, 240"
+ */
+export function formatGoogleMapsAddress(rawAddress: string): string {
+  if (!rawAddress) return '';
+  let str = rawAddress.trim();
+
+  // Remove sufixos como "- Centro", "- Timóteo", etc se o usuário colou tudo junto no campo
+  str = str.replace(/\s*[-–—]\s*(Centro|Timóteo|MG|Minas Gerais|Bairro\s+.*|Brasil).*/i, '');
+
+  // Identifica e expande prefixos de logradouros
+  const prefixes: [RegExp, string][] = [
+    [/^(r\.|r\s+|rua\s+)/i, 'Rua '],
+    [/^(av\.|av\s+|ave\.|avenida\s+)/i, 'Avenida '],
+    [/^(al\.|al\s+|alameda\s+)/i, 'Alameda '],
+    [/^(tr\.|tr\s+|trav\.|trav\s+|travessa\s+)/i, 'Travessa '],
+    [/^(pr\.|pr\s+|pca\.|pça\.|pça\s+|praça\s+|praca\s+)/i, 'Praça '],
+    [/^(rod\.|rod\s+|rodovia\s+)/i, 'Rodovia '],
+    [/^(est\.|est\s+|estrada\s+)/i, 'Estrada '],
+    [/^(bc\.|bc\s+|beco\s+)/i, 'Beco '],
+    [/^(vl\.|vl\s+|viela\s+)/i, 'Viela '],
+  ];
+
+  let prefix = '';
+  let rest = str;
+
+  for (const [regex, standardPrefix] of prefixes) {
+    if (regex.test(str)) {
+      prefix = standardPrefix;
+      rest = str.replace(regex, '').trim();
+      break;
+    }
+  }
+
+  // Se não começou com nenhum prefixo conhecido
+  if (!prefix) {
+    prefix = 'Rua ';
+  }
+
+  // Ajusta número (ex: "Rua Oito de Novembro 5" -> "Rua Oito de Novembro, 5")
+  rest = rest.replace(/\s*(?:nº|n°|n\.|n|num\.|num|número)\s*(\d+[a-zA-Z]?)/i, ', $1');
+  
+  // Se ainda tem espaço seguido de dígitos no fim sem vírgula (ex: "Oito de Novembro 5")
+  if (!rest.includes(',') && /\s+(\d+[a-zA-Z]?)$/.test(rest)) {
+    rest = rest.replace(/\s+(\d+[a-zA-Z]?)$/, ', $1');
+  }
+
+  // Separa logradouro do número para formatar em Title Case
+  let [logradouro, numero] = rest.split(',').map(s => s.trim());
+
+  const lowercaseWords = new Set(['de', 'da', 'do', 'dos', 'das', 'e', 'em', 'com', 'no', 'na', 'nos', 'nas', 'del']);
+
+  if (logradouro) {
+    logradouro = logradouro
+      .split(/\s+/)
+      .map((word, index) => {
+        const lower = word.toLowerCase();
+        // Preserva números ordinais (1º, 2ª, 31)
+        if (/^\d+[ºª°]?$/i.test(word)) return word;
+        if (index > 0 && lowercaseWords.has(lower)) return lower;
+        return lower.charAt(0).toUpperCase() + lower.slice(1);
+      })
+      .join(' ');
+  }
+
+  let formatted = `${prefix}${logradouro}`;
+  if (numero) {
+    formatted += `, ${numero}`;
+  }
+
+  return formatted;
+}
+
+/**
  * Converte um endereço completo (Rua, Número, Bairro, CEP, Cidade) em coordenadas geográficas precisas (Lat, Lng)
  * utilizando o serviço de geocodificação do OpenStreetMap (Nominatim) com fallback inteligente por bairro.
  */
@@ -79,7 +155,7 @@ export async function geocodeAddress(
   const fullQuery = queryParts.join(', ');
 
   try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}&limit=1`;
+    const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(fullQuery)}&limit=1`;
     const res = await fetch(url, {
       headers: {
         'Accept-Language': 'pt-BR',
@@ -104,7 +180,7 @@ export async function geocodeAddress(
     const logradouro = enderecoCompleto.split(',')[0].trim();
     try {
       const streetQuery = `${logradouro}, ${bairro || ''}, ${cidade}, ${estado}, Brasil`;
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetQuery)}&limit=1`;
+      const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(streetQuery)}&limit=1`;
       const res = await fetch(url, {
         headers: { 'Accept-Language': 'pt-BR' },
       });

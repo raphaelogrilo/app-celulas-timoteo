@@ -11,8 +11,9 @@ import {
   getCelulaByLiderEmailOrUid,
 } from '../services/celulaService';
 import { vincularLiderCelula, getAllLideres } from '../services/authService';
-import { fetchCepData, geocodeAddress } from '../utils/geo';
+import { fetchCepData, geocodeAddress, formatGoogleMapsAddress } from '../utils/geo';
 import { BAIRROS_TIMOTEO } from '../data/bairrosTimoteo';
+import { MiniMapPreview } from '../components/MiniMapPreview';
 import type { LiderUser, LocalItinerante } from '../types/celula';
 import {
   ArrowLeft, Loader2, Save, AlertCircle, MapPin,
@@ -178,18 +179,25 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
     loadData();
   }, [mode, celulaIdParam, currentUser, isAdmin, navigate, setValue]);
 
-  // Geocodificação precisa de Endereço Fixo
+  // Geocodificação precisa de Endereço Fixo com formatação padrão Google Maps
   const handleAddressGeocode = async () => {
-    const end = watch('endereco') || '';
+    const rawEnd = watch('endereco') || '';
     const bai = watch('bairro') || '';
     const cepVal = watch('cep') || '';
 
-    if (!end.trim() && !bai.trim()) return;
+    if (!rawEnd.trim() && !bai.trim()) return;
+
+    // Formata o endereço digitado para o padrão Google Maps (ex: "R. Oito de Novembro, 5 - Centro" -> "Rua Oito de Novembro, 5")
+    const formattedEnd = formatGoogleMapsAddress(rawEnd);
+    if (formattedEnd && formattedEnd !== rawEnd) {
+      setValue('endereco', formattedEnd);
+    }
 
     setIsGeocoding(true);
     setGeoFeedback(null);
 
-    const coords = await geocodeAddress(end, bai, cepVal);
+    const targetAddress = formattedEnd || rawEnd;
+    const coords = await geocodeAddress(targetAddress, bai, cepVal);
     if (coords) {
       setValue('coords', coords);
       setGeoFeedback(`📍 Localização exata encontrada no mapa: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
@@ -763,49 +771,53 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
             </div>
 
             {/* Endereço Completo (Rua / Avenida e Número) */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className={LABEL_CLASS + ' mb-0'}>
-                  Endereço Completo (Rua / Avenida e Número)
-                </label>
-                <button
-                  type="button"
-                  onClick={handleAddressGeocode}
-                  disabled={isGeocoding}
-                  className="text-[11px] text-brand-400 hover:text-brand-300 font-bold flex items-center gap-1 cursor-pointer"
-                >
-                  {isGeocoding ? (
-                    <><Loader2 className="w-3 h-3 animate-spin" /> Localizando...</>
-                  ) : (
-                    <><Sparkles className="w-3 h-3" /> Localizar Pin Exato no Mapa</>
-                  )}
-                </button>
-              </div>
-              <input
-                {...register('endereco')}
-                className={FIELD_CLASS}
-                placeholder="Ex: Rua 31 de Março, 240"
-                onBlur={handleAddressGeocode}
-              />
-              <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-                🔒 <em>O endereço exato posiciona o pin no mapa, mas fica protegido no app público (o visitante vê apenas o bairro).</em>
-              </p>
-              {geoFeedback && (
-                <p className="text-[11px] text-emerald-400 font-bold mt-1 bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-xl flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
-                  {geoFeedback}
+            <div className="space-y-3">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className={LABEL_CLASS + ' mb-0'}>
+                    Endereço Completo (Rua / Avenida e Número)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddressGeocode}
+                    disabled={isGeocoding}
+                    className="text-[11px] text-brand-400 hover:text-brand-300 font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    {isGeocoding ? (
+                      <><Loader2 className="w-3 h-3 animate-spin" /> Localizando...</>
+                    ) : (
+                      <><Sparkles className="w-3 h-3" /> Localizar Pin Exato no Mapa</>
+                    )}
+                  </button>
+                </div>
+                <input
+                  {...register('endereco')}
+                  className={FIELD_CLASS}
+                  placeholder="Ex: Rua 31 de Março, 240"
+                  onBlur={handleAddressGeocode}
+                />
+                <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                  🔒 <em>O endereço exato posiciona o pin no mapa, mas fica protegido no app público (o visitante vê apenas o bairro).</em>
                 </p>
-              )}
-            </div>
+                {geoFeedback && (
+                  <p className="text-[11px] text-emerald-400 font-bold mt-1.5 bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-xl flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                    {geoFeedback}
+                  </p>
+                )}
+              </div>
 
-            {/* Ponto de Referência */}
-            <div>
-              <label className={LABEL_CLASS}>Ponto de Referência (opcional)</label>
-              <input
-                {...register('pontoReferencia')}
-                className={FIELD_CLASS}
-                placeholder="Ex: Próximo à Praça 1º de Maio, ao lado da padaria..."
-              />
+              {/* Mini Mapa Interativo com Pin Exato */}
+              {watch('coords') && watch('coords')?.lat && watch('coords')?.lng && (
+                <MiniMapPreview
+                  coords={watch('coords')!}
+                  title={watch('nome') || 'Local Exato da Célula'}
+                  onCoordsChange={(newCoords) => {
+                    setValue('coords', newCoords);
+                    setGeoFeedback(`📍 Pin ajustado manualmente no mapa: ${newCoords.lat.toFixed(4)}, ${newCoords.lng.toFixed(4)}`);
+                  }}
+                />
+              )}
             </div>
           </div>
         )}

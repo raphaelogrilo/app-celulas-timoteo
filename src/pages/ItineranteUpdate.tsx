@@ -5,8 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getCelulaById, getCelulaByLiderEmailOrUid, updateEncontroAtual } from '../services/celulaService';
-import { fetchCepData, geocodeAddress } from '../utils/geo';
+import { fetchCepData, geocodeAddress, formatGoogleMapsAddress } from '../utils/geo';
 import { BAIRROS_TIMOTEO } from '../data/bairrosTimoteo';
+import { MiniMapPreview } from '../components/MiniMapPreview';
 import type { Celula } from '../types/celula';
 import {
   ArrowLeft, Save, Loader2, AlertCircle, MapPin, Calendar, Clock, Info, RefreshCw, Sparkles, CheckCircle2,
@@ -104,16 +105,23 @@ export default function ItineranteUpdate() {
   }, [currentUser, celulaIdParam, isAdmin, navigate, setValue]);
 
   const handleAddressGeocode = async () => {
-    const end = watch('endereco') || '';
+    const rawEnd = watch('endereco') || '';
     const bai = watch('bairro') || '';
     const cepVal = watch('cep') || '';
 
-    if (!end.trim() && !bai.trim()) return;
+    if (!rawEnd.trim() && !bai.trim()) return;
+
+    // Formata o endereço digitado para o padrão Google Maps
+    const formattedEnd = formatGoogleMapsAddress(rawEnd);
+    if (formattedEnd && formattedEnd !== rawEnd) {
+      setValue('endereco', formattedEnd);
+    }
 
     setIsGeocoding(true);
     setGeoFeedback(null);
 
-    const coords = await geocodeAddress(end, bai, cepVal);
+    const targetAddress = formattedEnd || rawEnd;
+    const coords = await geocodeAddress(targetAddress, bai, cepVal);
     if (coords) {
       setValue('lat', coords.lat);
       setValue('lng', coords.lng);
@@ -364,17 +372,23 @@ export default function ItineranteUpdate() {
           </p>
         )}
 
-        {/* Observação e Ponto de Referência */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className={LABEL_CLASS}>Ponto de Referência (opcional)</label>
-            <input {...register('pontoReferencia')} className={FIELD_CLASS} placeholder="Ex: Casa com portão preto..." />
-          </div>
+        {/* Mini Mapa Interativo com Pin Exato */}
+        {typeof watch('lat') === 'number' && typeof watch('lng') === 'number' && watch('lat') !== 0 && (
+          <MiniMapPreview
+            coords={{ lat: watch('lat'), lng: watch('lng') }}
+            title={celula?.nome || 'Local da Célula'}
+            onCoordsChange={(newCoords) => {
+              setValue('lat', newCoords.lat);
+              setValue('lng', newCoords.lng);
+              setGeoFeedback(`📍 Pin ajustado manualmente no mapa: ${newCoords.lat.toFixed(4)}, ${newCoords.lng.toFixed(4)}`);
+            }}
+          />
+        )}
 
-          <div>
-            <label className={LABEL_CLASS}>Observação (opcional)</label>
-            <input {...register('observacao')} className={FIELD_CLASS} placeholder="Ex: Traga sua Bíblia e um lanche..." />
-          </div>
+        {/* Observação */}
+        <div>
+          <label className={LABEL_CLASS}>Observação (opcional)</label>
+          <input {...register('observacao')} className={FIELD_CLASS} placeholder="Ex: Traga sua Bíblia e um lanche comunitário..." />
         </div>
 
         {/* Coords ocultos */}
