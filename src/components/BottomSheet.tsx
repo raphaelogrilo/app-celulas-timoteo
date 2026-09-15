@@ -207,12 +207,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               </div>
             </div>
 
-            {/* Descrição / Faixa Etária */}
-            {celula.descricao && (
-              <p className="text-xs text-slate-600 leading-relaxed bg-slate-50/70 p-3 rounded-xl border border-slate-100">
-                "{celula.descricao}"
-              </p>
-            )}
+
 
             {/* Ação Principal: Falar no WhatsApp */}
             <div className="pt-2 pb-[calc(var(--sab)+6px)]">

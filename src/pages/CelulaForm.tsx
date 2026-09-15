@@ -515,16 +515,10 @@ export default function CelulaForm({ mode = 'create' }: CelulaFormProps) {
           </div>
         )}
 
-        {/* Descrição e Faixa Etária */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className={LABEL_CLASS}>Descrição da Célula</label>
-            <textarea {...register('descricao')} className={FIELD_CLASS + ' resize-none h-24'} placeholder="Um breve texto sobre o grupo..." />
-          </div>
-          <div>
-            <label className={LABEL_CLASS}>Faixa Etária / Público</label>
-            <input {...register('faixaEtaria')} className={FIELD_CLASS} placeholder="Ex: 18 a 29 anos, Famílias, etc." />
-          </div>
+        {/* Faixa Etária / Público */}
+        <div>
+          <label className={LABEL_CLASS}>Faixa Etária / Público</label>
+          <input {...register('faixaEtaria')} className={FIELD_CLASS} placeholder="Ex: 18 a 29 anos, Famílias, etc." />
         </div>
 
         {/* Toggle Itinerante */}
