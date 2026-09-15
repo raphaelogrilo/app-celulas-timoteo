@@ -221,18 +221,11 @@ export const MapContainer: React.FC<MapViewProps> = ({
           />
         )}
 
-        {/* Marcadores das Células (Somente células ativas com endereço/pin exato cadastrado) */}
+        {/* Marcadores das Células (Marcadores oficiais das células ativas) */}
         {celulas.map((celula) => {
           if (!celula.ativo) return null;
           const pos = celula.itinerante ? celula.encontroAtual?.coords : celula.coords;
           if (!pos || typeof pos.lat !== 'number' || typeof pos.lng !== 'number') return null;
-
-          // Validação: deve possuir endereço ou dados de geolocalização exata
-          const hasExactAddress = celula.itinerante
-            ? (!!celula.encontroAtual?.endereco || !!celula.encontroAtual?.coords)
-            : (!!celula.endereco && !!celula.coords);
-
-          if (!hasExactAddress) return null;
 
           const isSelected = selectedCelula?.id === celula.id;
           return (

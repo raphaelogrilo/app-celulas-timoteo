@@ -1,32 +1,62 @@
 import { supabase } from '../lib/supabase';
 import type { Celula, EncontroAtual } from '../types/celula';
+import { CELULAS_SEED } from '../data/celulas';
 
 const TABELA = 'celulas';
 
 // Converter linha do Supabase (snake_case) para modelo de Celula do App (camelCase)
 function mapFromRow(row: any): Celula {
   const encontroAtual = row.encontro_atual as EncontroAtual | undefined;
+  
+  // Tenta encontrar dados correspondentes no seed oficial
+  const rowNameClean = (row.nome || '').toLowerCase();
+  const seedMatch = CELULAS_SEED.find((s) => {
+    if (s.id === row.id) return true;
+    const sNameClean = s.nome.toLowerCase();
+    if (sNameClean === rowNameClean) return true;
+    // Compara prefixo (ex: "Forja 1", "Celeiro 2", "Tocha", "Brasa", etc.)
+    const sPrefix = sNameClean.split('·')[0].trim();
+    const rowPrefix = rowNameClean.split('·')[0].trim();
+    if (sPrefix && rowPrefix && sPrefix === rowPrefix) return true;
+    if (row.lider && s.lider && s.lider.toLowerCase() === row.lider.toLowerCase()) return true;
+    return false;
+  });
+
+  const perfil = row.perfil === 'Teens' ? 'Adolescentes' : (row.perfil || seedMatch?.perfil || 'Homens');
+  
+  const ministerio = row.ministerio || seedMatch?.ministerio || (
+    perfil === 'Homens' ? 'Homens de Atos' :
+    perfil === 'Mulheres' ? 'Mulheres de Atitude' :
+    perfil === 'Casais' ? 'Ministério Hope (Casais)' :
+    perfil === 'Jovens' ? 'Ministério Flamma (Jovens)' :
+    'Ministério Flick (Adolescentes)'
+  );
+
+  const coords = (row.lat && row.lng && row.endereco)
+    ? { lat: Number(row.lat), lng: Number(row.lng) }
+    : (seedMatch?.coords || (row.lat && row.lng ? { lat: Number(row.lat), lng: Number(row.lng) } : undefined));
+
   return {
     id: row.id,
-    nome: row.nome,
-    perfil: row.perfil,
-    ministerio: row.ministerio || undefined,
-    lider: row.lider,
-    telefone: row.telefone,
+    nome: seedMatch?.nome || row.nome,
+    perfil: perfil,
+    ministerio: ministerio,
+    lider: row.lider || seedMatch?.lider || '',
+    telefone: row.telefone || seedMatch?.telefone || '',
     fotoLider: row.foto_lider || undefined,
     descricao: row.descricao || undefined,
-    faixaEtaria: row.faixa_etaria || undefined,
+    faixaEtaria: row.faixa_etaria || seedMatch?.faixaEtaria || undefined,
     ativo: row.ativo ?? true,
-    itinerante: row.itinerante ?? false,
-    dia: row.dia || undefined,
-    horario: row.horario || undefined,
-    cep: row.cep || undefined,
-    endereco: row.endereco || undefined,
-    bairro: row.bairro || undefined,
+    itinerante: row.itinerante ?? (seedMatch?.itinerante ?? false),
+    dia: row.dia || seedMatch?.dia || undefined,
+    horario: row.horario || seedMatch?.horario || undefined,
+    cep: row.cep || seedMatch?.cep || undefined,
+    endereco: row.endereco || seedMatch?.endereco || undefined,
+    bairro: row.bairro || seedMatch?.bairro || undefined,
     pontoReferencia: row.ponto_referencia || undefined,
-    coords: row.lat && row.lng ? { lat: Number(row.lat), lng: Number(row.lng) } : undefined,
-    encontroAtual,
-    locaisItinerantes: encontroAtual?.locais || undefined,
+    coords: coords,
+    encontroAtual: encontroAtual || seedMatch?.encontroAtual,
+    locaisItinerantes: encontroAtual?.locais || seedMatch?.locaisItinerantes,
     liderUid: row.lider_user_id || row.lider_id || undefined,
     liderEmail: row.lider_email || undefined,
     criadoEm: row.criado_em,
@@ -39,7 +69,6 @@ function mapToRow(data: Partial<Celula>) {
   const row: Record<string, any> = {};
   if (data.nome !== undefined) row.nome = data.nome;
   if (data.perfil !== undefined) row.perfil = data.perfil;
-  if (data.ministerio !== undefined) row.ministerio = data.ministerio;
   if (data.lider !== undefined) row.lider = data.lider;
   if (data.telefone !== undefined) row.telefone = data.telefone;
   if (data.fotoLider !== undefined) row.foto_lider = data.fotoLider;
@@ -77,13 +106,19 @@ export function listenCelulas(
   callback: (celulas: Celula[]) => void
 ): () => void {
   const fetchAll = async () => {
-    const { data, error } = await supabase
-      .from(TABELA)
-      .select('*')
-      .eq('ativo', true);
+    try {
+      const { data, error } = await supabase
+        .from(TABELA)
+        .select('*')
+        .eq('ativo', true);
 
-    if (!error && data) {
-      callback(data.map(mapFromRow));
+      if (!error && data && data.length > 0) {
+        callback(data.map(mapFromRow));
+      } else {
+        callback(CELULAS_SEED);
+      }
+    } catch {
+      callback(CELULAS_SEED);
     }
   };
 
@@ -317,8 +352,6 @@ export async function toggleCelulaAtivo(
     throw new Error(`Erro ao alternar status da célula: ${error.message}`);
   }
 }
-
-import { CELULAS_SEED } from '../data/celulas';
 
 /**
  * Deleta permanentemente uma célula (somente admin).
