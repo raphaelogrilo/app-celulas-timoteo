@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { PrivateRoute } from './components/PrivateRoute';
 import PublicMap from './pages/PublicMap';
@@ -19,8 +19,10 @@ createRoot(document.getElementById('root')!).render(
           {/* Mapa Público — sem autenticação */}
           <Route path="/" element={<PublicMap />} />
 
-          {/* Área do Líder */}
+          {/* Área do Líder / Login */}
           <Route path="/lider" element={<LeaderLogin />} />
+          <Route path="/lider/login" element={<LeaderLogin />} />
+          <Route path="/login" element={<LeaderLogin />} />
 
           <Route
             path="/lider/dashboard"
@@ -67,6 +69,9 @@ createRoot(document.getElementById('root')!).render(
               </PrivateRoute>
             }
           />
+
+          {/* Rota Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
